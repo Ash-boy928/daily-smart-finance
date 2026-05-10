@@ -90,23 +90,30 @@ const seed = (): DB => ({
 });
 
 let listeners = new Set<() => void>();
+let cachedSnapshot: DB | null = null;
+const serverSnapshot: DB = seed();
 
 function read(): DB {
-  if (typeof window === "undefined") return seed();
+  if (typeof window === "undefined") return serverSnapshot;
+  if (cachedSnapshot) return cachedSnapshot;
   try {
     const raw = localStorage.getItem(KEY);
     if (!raw) {
       const s = seed();
       localStorage.setItem(KEY, JSON.stringify(s));
+      cachedSnapshot = s;
       return s;
     }
-    return JSON.parse(raw) as DB;
+    cachedSnapshot = JSON.parse(raw) as DB;
+    return cachedSnapshot;
   } catch {
-    return seed();
+    cachedSnapshot = seed();
+    return cachedSnapshot;
   }
 }
 
 function write(db: DB) {
+  cachedSnapshot = db;
   localStorage.setItem(KEY, JSON.stringify(db));
   listeners.forEach((l) => l());
 }
@@ -118,7 +125,7 @@ export function useDB(): DB {
       return () => listeners.delete(cb);
     },
     () => read(),
-    () => seed(),
+    () => serverSnapshot,
   );
 }
 
@@ -126,7 +133,7 @@ export const db = {
   get: read,
   set: write,
   update(fn: (db: DB) => void) {
-    const d = read();
+    const d = JSON.parse(JSON.stringify(read())) as DB;
     fn(d);
     write(d);
   },
