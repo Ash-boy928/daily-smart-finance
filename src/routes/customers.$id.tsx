@@ -152,7 +152,7 @@ function CustomerDetail() {
                 </div>
                 {loan.status === "approved" && (
                   <button
-                    onClick={() => navigate({ to: "/collect", search: { loan: loan.id } as never })}
+                    onClick={() => navigate({ to: "/collect" })}
                     className="mt-3 w-full bg-success text-success-foreground rounded-xl py-2 text-sm font-semibold flex items-center justify-center gap-1"
                   >
                     <IndianRupee className="size-4" /> Collect EMI
