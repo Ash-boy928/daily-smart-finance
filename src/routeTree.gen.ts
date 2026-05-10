@@ -9,38 +9,246 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as SavingsRouteImport } from './routes/savings'
+import { Route as ReportsRouteImport } from './routes/reports'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as LoansRouteImport } from './routes/loans'
+import { Route as ExpensesRouteImport } from './routes/expenses'
+import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as CustomersRouteImport } from './routes/customers'
+import { Route as CollectRouteImport } from './routes/collect'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CustomersNewRouteImport } from './routes/customers.new'
+import { Route as CustomersIdRouteImport } from './routes/customers.$id'
 
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SavingsRoute = SavingsRouteImport.update({
+  id: '/savings',
+  path: '/savings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReportsRoute = ReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoansRoute = LoansRouteImport.update({
+  id: '/loans',
+  path: '/loans',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ExpensesRoute = ExpensesRouteImport.update({
+  id: '/expenses',
+  path: '/expenses',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CustomersRoute = CustomersRouteImport.update({
+  id: '/customers',
+  path: '/customers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CollectRoute = CollectRouteImport.update({
+  id: '/collect',
+  path: '/collect',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CustomersNewRoute = CustomersNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => CustomersRoute,
+} as any)
+const CustomersIdRoute = CustomersIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => CustomersRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/collect': typeof CollectRoute
+  '/customers': typeof CustomersRouteWithChildren
+  '/dashboard': typeof DashboardRoute
+  '/expenses': typeof ExpensesRoute
+  '/loans': typeof LoansRoute
+  '/login': typeof LoginRoute
+  '/reports': typeof ReportsRoute
+  '/savings': typeof SavingsRoute
+  '/settings': typeof SettingsRoute
+  '/customers/$id': typeof CustomersIdRoute
+  '/customers/new': typeof CustomersNewRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/collect': typeof CollectRoute
+  '/customers': typeof CustomersRouteWithChildren
+  '/dashboard': typeof DashboardRoute
+  '/expenses': typeof ExpensesRoute
+  '/loans': typeof LoansRoute
+  '/login': typeof LoginRoute
+  '/reports': typeof ReportsRoute
+  '/savings': typeof SavingsRoute
+  '/settings': typeof SettingsRoute
+  '/customers/$id': typeof CustomersIdRoute
+  '/customers/new': typeof CustomersNewRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/collect': typeof CollectRoute
+  '/customers': typeof CustomersRouteWithChildren
+  '/dashboard': typeof DashboardRoute
+  '/expenses': typeof ExpensesRoute
+  '/loans': typeof LoansRoute
+  '/login': typeof LoginRoute
+  '/reports': typeof ReportsRoute
+  '/savings': typeof SavingsRoute
+  '/settings': typeof SettingsRoute
+  '/customers/$id': typeof CustomersIdRoute
+  '/customers/new': typeof CustomersNewRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/collect'
+    | '/customers'
+    | '/dashboard'
+    | '/expenses'
+    | '/loans'
+    | '/login'
+    | '/reports'
+    | '/savings'
+    | '/settings'
+    | '/customers/$id'
+    | '/customers/new'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/collect'
+    | '/customers'
+    | '/dashboard'
+    | '/expenses'
+    | '/loans'
+    | '/login'
+    | '/reports'
+    | '/savings'
+    | '/settings'
+    | '/customers/$id'
+    | '/customers/new'
+  id:
+    | '__root__'
+    | '/'
+    | '/collect'
+    | '/customers'
+    | '/dashboard'
+    | '/expenses'
+    | '/loans'
+    | '/login'
+    | '/reports'
+    | '/savings'
+    | '/settings'
+    | '/customers/$id'
+    | '/customers/new'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CollectRoute: typeof CollectRoute
+  CustomersRoute: typeof CustomersRouteWithChildren
+  DashboardRoute: typeof DashboardRoute
+  ExpensesRoute: typeof ExpensesRoute
+  LoansRoute: typeof LoansRoute
+  LoginRoute: typeof LoginRoute
+  ReportsRoute: typeof ReportsRoute
+  SavingsRoute: typeof SavingsRoute
+  SettingsRoute: typeof SettingsRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/savings': {
+      id: '/savings'
+      path: '/savings'
+      fullPath: '/savings'
+      preLoaderRoute: typeof SavingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reports': {
+      id: '/reports'
+      path: '/reports'
+      fullPath: '/reports'
+      preLoaderRoute: typeof ReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/loans': {
+      id: '/loans'
+      path: '/loans'
+      fullPath: '/loans'
+      preLoaderRoute: typeof LoansRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/expenses': {
+      id: '/expenses'
+      path: '/expenses'
+      fullPath: '/expenses'
+      preLoaderRoute: typeof ExpensesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/customers': {
+      id: '/customers'
+      path: '/customers'
+      fullPath: '/customers'
+      preLoaderRoute: typeof CustomersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/collect': {
+      id: '/collect'
+      path: '/collect'
+      fullPath: '/collect'
+      preLoaderRoute: typeof CollectRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,11 +256,48 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/customers/new': {
+      id: '/customers/new'
+      path: '/new'
+      fullPath: '/customers/new'
+      preLoaderRoute: typeof CustomersNewRouteImport
+      parentRoute: typeof CustomersRoute
+    }
+    '/customers/$id': {
+      id: '/customers/$id'
+      path: '/$id'
+      fullPath: '/customers/$id'
+      preLoaderRoute: typeof CustomersIdRouteImport
+      parentRoute: typeof CustomersRoute
+    }
   }
 }
 
+interface CustomersRouteChildren {
+  CustomersIdRoute: typeof CustomersIdRoute
+  CustomersNewRoute: typeof CustomersNewRoute
+}
+
+const CustomersRouteChildren: CustomersRouteChildren = {
+  CustomersIdRoute: CustomersIdRoute,
+  CustomersNewRoute: CustomersNewRoute,
+}
+
+const CustomersRouteWithChildren = CustomersRoute._addFileChildren(
+  CustomersRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CollectRoute: CollectRoute,
+  CustomersRoute: CustomersRouteWithChildren,
+  DashboardRoute: DashboardRoute,
+  ExpensesRoute: ExpensesRoute,
+  LoansRoute: LoansRoute,
+  LoginRoute: LoginRoute,
+  ReportsRoute: ReportsRoute,
+  SavingsRoute: SavingsRoute,
+  SettingsRoute: SettingsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
