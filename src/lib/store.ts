@@ -133,7 +133,7 @@ export const db = {
   get: read,
   set: write,
   update(fn: (db: DB) => void) {
-    const d = read();
+    const d = JSON.parse(JSON.stringify(read())) as DB;
     fn(d);
     write(d);
   },
