@@ -18,23 +18,21 @@ function Dashboard() {
     return d.toDateString() === today.toDateString();
   };
 
-  const activeLoans = db.loans.filter((l) => l.status === "approved");
+  const activeLoans = db.loans.filter((l) => l.status === "approved" || l.status === "completed");
   const totalDisbursed = activeLoans.reduce((s, l) => s + l.amount, 0);
-  const totalCollected = db.emiPayments.reduce((s, p) => s + p.amount, 0);
   const totalExpenses = db.expenses.reduce((s, e) => s + e.amount, 0);
-  const profit = totalCollected - totalDisbursed - totalExpenses + activeLoans.reduce((s, l) => {
-    const { paid } = loanProgress(l, db.emiPayments);
-    return s + Math.min(paid, l.amount);
-  }, 0); // rough profit visualization
+  // Realized profit: only counts after each loan's principal has been recovered
+  const realizedProfit = activeLoans.reduce((s, l) => s + loanProgress(l, db.emiPayments).realizedProfit, 0);
+  const netProfit = realizedProfit - totalExpenses;
   const todayCollected = db.emiPayments.filter((p) => isToday(p.date)).reduce((s, p) => s + p.amount, 0);
-  const expectedToday = activeLoans.reduce((s, l) => s + l.dailyEmi, 0);
+  const expectedToday = db.loans.filter((l) => l.status === "approved").reduce((s, l) => s + l.dailyEmi, 0);
   const pendingToday = Math.max(0, expectedToday - todayCollected);
   const pendingLoans = db.loans.filter((l) => l.status === "pending").length;
 
   const isOwner = session?.role === "owner";
 
   return (
-    <AppShell title={isOwner ? "Owner Dashboard" : "Collector Dashboard"}>
+    <AppShell title="Dashboard">
       <div className="px-4 pt-4 -mt-2">
         <div className="bg-gradient-card text-primary-foreground rounded-2xl p-5 shadow-card">
           <p className="text-xs opacity-80">Today's Collection</p>
@@ -54,7 +52,7 @@ function Dashboard() {
         {isOwner && (
           <>
             <Stat icon={<TrendingUp className="size-4" />} label="Disbursed" value={inr(totalDisbursed)} />
-            <Stat icon={<IndianRupee className="size-4" />} label="Profit (est.)" value={inr(Math.max(0, profit))} highlight />
+            <Stat icon={<IndianRupee className="size-4" />} label="Realized Profit" value={inr(Math.max(0, netProfit))} highlight />
           </>
         )}
         {!isOwner && (

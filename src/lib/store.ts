@@ -175,13 +175,25 @@ export function useSession(): User | null {
 }
 
 // Helpers
+export const MIN_LOANABLE = 5000; // savings threshold to highlight as "ready to lend"
+
 export function loanProgress(loan: Loan, payments: EmiPayment[]) {
   const paid = payments.filter((p) => p.loanId === loan.id).reduce((s, p) => s + p.amount, 0);
   const totalDue = loan.amount + loan.profit;
   const remaining = Math.max(0, totalDue - paid);
   const daysPaid = Math.floor(paid / loan.dailyEmi);
   const daysRemaining = Math.max(0, loan.durationDays - daysPaid);
-  return { paid, totalDue, remaining, daysPaid, daysRemaining, percent: Math.min(100, (paid / totalDue) * 100) };
+  // Realized profit: only counts after principal is fully recovered
+  const realizedProfit = Math.max(0, paid - loan.amount);
+  return {
+    paid,
+    totalDue,
+    remaining,
+    daysPaid,
+    daysRemaining,
+    realizedProfit,
+    percent: Math.min(100, (paid / totalDue) * 100),
+  };
 }
 
 export function inr(n: number) {

@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
-import { useDB, inr } from "@/lib/store";
+import { useDB, inr, loanProgress } from "@/lib/store";
 import { TrendingUp, TrendingDown, Wallet, Users } from "lucide-react";
 
 export const Route = createFileRoute("/reports")({
@@ -16,20 +16,22 @@ function Reports() {
   const collectedToday = data.emiPayments.filter((p) => isToday(p.date)).reduce((s, p) => s + p.amount, 0);
   const collectedWeek = data.emiPayments.filter((p) => inLastDays(p.date, 7)).reduce((s, p) => s + p.amount, 0);
   const collectedMonth = data.emiPayments.filter((p) => inLastDays(p.date, 30)).reduce((s, p) => s + p.amount, 0);
-  const totalDisbursed = data.loans.filter((l) => l.status === "approved").reduce((s, l) => s + l.amount, 0);
+  const issuedLoans = data.loans.filter((l) => l.status === "approved" || l.status === "completed");
+  const totalDisbursed = issuedLoans.reduce((s, l) => s + l.amount, 0);
   const totalCollected = data.emiPayments.reduce((s, p) => s + p.amount, 0);
   const totalExpenses = data.expenses.reduce((s, e) => s + e.amount, 0);
-  const expectedProfit = data.loans.filter((l) => l.status === "approved").reduce((s, l) => s + l.profit, 0);
-  const realizedProfit = Math.max(0, totalCollected - totalDisbursed);
+  const expectedProfit = issuedLoans.reduce((s, l) => s + l.profit, 0);
+  // Realized profit is per-loan: only after that loan's principal is fully recovered
+  const realizedProfit = issuedLoans.reduce((s, l) => s + loanProgress(l, data.emiPayments).realizedProfit, 0);
   const netProfit = realizedProfit - totalExpenses;
 
   return (
     <AppShell title="Reports" showBack>
       <div className="px-4 pt-4 space-y-4">
         <div className="bg-gradient-card text-primary-foreground rounded-2xl p-5 shadow-card">
-          <p className="text-xs opacity-80">Net Profit (after expenses)</p>
+          <p className="text-xs opacity-80">Net Realized Profit (after expenses)</p>
           <p className="text-3xl font-bold">{inr(netProfit)}</p>
-          <p className="text-xs opacity-80 mt-1">Expected total profit: {inr(expectedProfit)}</p>
+          <p className="text-xs opacity-80 mt-1">Expected once all loans complete: {inr(expectedProfit)}</p>
         </div>
 
         <Section title="Collections">
