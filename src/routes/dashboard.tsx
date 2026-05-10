@@ -33,9 +33,6 @@ function Dashboard() {
 
   return (
     <AppShell title="Dashboard">
-
-  return (
-    <AppShell title={isOwner ? "Owner Dashboard" : "Collector Dashboard"}>
       <div className="px-4 pt-4 -mt-2">
         <div className="bg-gradient-card text-primary-foreground rounded-2xl p-5 shadow-card">
           <p className="text-xs opacity-80">Today's Collection</p>
@@ -55,7 +52,7 @@ function Dashboard() {
         {isOwner && (
           <>
             <Stat icon={<TrendingUp className="size-4" />} label="Disbursed" value={inr(totalDisbursed)} />
-            <Stat icon={<IndianRupee className="size-4" />} label="Profit (est.)" value={inr(Math.max(0, profit))} highlight />
+            <Stat icon={<IndianRupee className="size-4" />} label="Realized Profit" value={inr(Math.max(0, netProfit))} highlight />
           </>
         )}
         {!isOwner && (
