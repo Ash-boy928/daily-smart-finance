@@ -16,10 +16,10 @@ export const Route = createFileRoute("/")({
 function Splash() {
   const navigate = useNavigate();
   useEffect(() => {
-    const t = setTimeout(() => {
+    const t = window.setTimeout(() => {
       const s = getSession();
       navigate({ to: s ? "/dashboard" : "/login" });
-    }, 1400);
+    }, 120);
     return () => clearTimeout(t);
   }, [navigate]);
 

@@ -163,9 +163,8 @@ export function setSession(user: User | null) {
 const sessionListeners = new Set<() => void>();
 
 export function useSession(): User | null {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(() => getSession());
   useEffect(() => {
-    setUser(getSession());
     const cb = () => setUser(getSession());
     sessionListeners.add(cb);
     return () => {
