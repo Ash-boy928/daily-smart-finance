@@ -1,6 +1,6 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { Home, Users, IndianRupee, FileBarChart, Settings as SettingsIcon, LogOut } from "lucide-react";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useSession, setSession, type Role } from "@/lib/store";
 
 const navByRole: Record<Role, { to: string; label: string; icon: typeof Home }[]> = {
@@ -30,10 +30,14 @@ export function AppShell({ title, children, right, showBack }: Props) {
   const session = useSession();
   const navigate = useNavigate();
   const path = useRouterState({ select: (s) => s.location.pathname });
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    if (session === null) {
-      // wait one tick to verify
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (mounted && session === null) {
       const t = setTimeout(() => {
         if (!localStorage.getItem("smartfinance_session_v1")) {
           navigate({ to: "/login" });
@@ -41,7 +45,7 @@ export function AppShell({ title, children, right, showBack }: Props) {
       }, 50);
       return () => clearTimeout(t);
     }
-  }, [session, navigate]);
+  }, [mounted, session, navigate]);
 
   const items = navByRole[session?.role ?? "collector"];
 
