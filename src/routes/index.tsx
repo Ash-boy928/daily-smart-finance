@@ -1,26 +1,38 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
+import { Sprout } from "lucide-react";
+import { getSession } from "@/lib/store";
 
 export const Route = createFileRoute("/")({
-  component: Index,
+  head: () => ({
+    meta: [
+      { title: "Smart Finance — Microfinance & Daily Collection" },
+      { name: "description", content: "Manage customers, loans, daily EMI collections, savings and reports." },
+    ],
+  }),
+  component: Splash,
 });
 
-// IMPORTANT: Replace this placeholder. For sites with multiple pages (About, Services, Contact, etc.),
-// create separate route files (about.tsx, services.tsx, contact.tsx) — don't put all pages in this file.
-function PlaceholderIndex() {
+function Splash() {
+  const navigate = useNavigate();
+  useEffect(() => {
+    const t = setTimeout(() => {
+      const s = getSession();
+      navigate({ to: s ? "/dashboard" : "/login" });
+    }, 1400);
+    return () => clearTimeout(t);
+  }, [navigate]);
+
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
+    <div className="min-h-screen bg-gradient-primary text-primary-foreground flex flex-col items-center justify-center max-w-md mx-auto">
+      <div className="animate-in fade-in zoom-in duration-700 flex flex-col items-center gap-4">
+        <div className="size-24 rounded-3xl bg-white/15 backdrop-blur-sm grid place-items-center shadow-card">
+          <Sprout className="size-12" />
+        </div>
+        <h1 className="text-3xl font-bold tracking-tight">Smart Finance</h1>
+        <p className="text-sm opacity-80">Microfinance · Daily Collection</p>
+      </div>
+      <div className="absolute bottom-10 text-xs opacity-70">Loading…</div>
     </div>
   );
-}
-
-function Index() {
-  return <PlaceholderIndex />;
 }
