@@ -64,7 +64,7 @@ export function AppShell({ title, children, right, showBack }: Props) {
           )}
           <div className="flex-1 min-w-0">
             <h1 className="text-lg font-semibold truncate">{title}</h1>
-            {session && (
+            {mounted && session && (
               <p className="text-xs opacity-80 truncate">
                 {session.name} · {session.role === "owner" ? "Owner" : "Collector"}
               </p>
