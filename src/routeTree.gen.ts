@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SavingsRouteImport } from './routes/savings'
 import { Route as ReportsRouteImport } from './routes/reports'
+import { Route as ProfitRouteImport } from './routes/profit'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LoansRouteImport } from './routes/loans'
 import { Route as ExpensesRouteImport } from './routes/expenses'
@@ -35,6 +36,11 @@ const SavingsRoute = SavingsRouteImport.update({
 const ReportsRoute = ReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfitRoute = ProfitRouteImport.update({
+  id: '/profit',
+  path: '/profit',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -91,6 +97,7 @@ export interface FileRoutesByFullPath {
   '/expenses': typeof ExpensesRoute
   '/loans': typeof LoansRoute
   '/login': typeof LoginRoute
+  '/profit': typeof ProfitRoute
   '/reports': typeof ReportsRoute
   '/savings': typeof SavingsRoute
   '/settings': typeof SettingsRoute
@@ -105,6 +112,7 @@ export interface FileRoutesByTo {
   '/expenses': typeof ExpensesRoute
   '/loans': typeof LoansRoute
   '/login': typeof LoginRoute
+  '/profit': typeof ProfitRoute
   '/reports': typeof ReportsRoute
   '/savings': typeof SavingsRoute
   '/settings': typeof SettingsRoute
@@ -120,6 +128,7 @@ export interface FileRoutesById {
   '/expenses': typeof ExpensesRoute
   '/loans': typeof LoansRoute
   '/login': typeof LoginRoute
+  '/profit': typeof ProfitRoute
   '/reports': typeof ReportsRoute
   '/savings': typeof SavingsRoute
   '/settings': typeof SettingsRoute
@@ -136,6 +145,7 @@ export interface FileRouteTypes {
     | '/expenses'
     | '/loans'
     | '/login'
+    | '/profit'
     | '/reports'
     | '/savings'
     | '/settings'
@@ -150,6 +160,7 @@ export interface FileRouteTypes {
     | '/expenses'
     | '/loans'
     | '/login'
+    | '/profit'
     | '/reports'
     | '/savings'
     | '/settings'
@@ -164,6 +175,7 @@ export interface FileRouteTypes {
     | '/expenses'
     | '/loans'
     | '/login'
+    | '/profit'
     | '/reports'
     | '/savings'
     | '/settings'
@@ -179,6 +191,7 @@ export interface RootRouteChildren {
   ExpensesRoute: typeof ExpensesRoute
   LoansRoute: typeof LoansRoute
   LoginRoute: typeof LoginRoute
+  ProfitRoute: typeof ProfitRoute
   ReportsRoute: typeof ReportsRoute
   SavingsRoute: typeof SavingsRoute
   SettingsRoute: typeof SettingsRoute
@@ -205,6 +218,13 @@ declare module '@tanstack/react-router' {
       path: '/reports'
       fullPath: '/reports'
       preLoaderRoute: typeof ReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profit': {
+      id: '/profit'
+      path: '/profit'
+      fullPath: '/profit'
+      preLoaderRoute: typeof ProfitRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -295,6 +315,7 @@ const rootRouteChildren: RootRouteChildren = {
   ExpensesRoute: ExpensesRoute,
   LoansRoute: LoansRoute,
   LoginRoute: LoginRoute,
+  ProfitRoute: ProfitRoute,
   ReportsRoute: ReportsRoute,
   SavingsRoute: SavingsRoute,
   SettingsRoute: SettingsRoute,
