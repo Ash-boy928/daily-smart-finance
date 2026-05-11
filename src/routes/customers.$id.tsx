@@ -1,8 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { AppShell } from "@/components/AppShell";
-import { useDB, useSession, db, uid, loanProgress, inr } from "@/lib/store";
-import { Phone, MapPin, PlusCircle, IndianRupee, PiggyBank } from "lucide-react";
+import { useDB, useSession, db, uid, loanProgress, inr, calcEmi, emiAmountOf, emiTypeOf, savingsBalance, type EmiType } from "@/lib/store";
+import { Phone, MapPin, PlusCircle, IndianRupee, PiggyBank, Receipt as ReceiptIcon } from "lucide-react";
 
 export const Route = createFileRoute("/customers/$id")({
   head: () => ({ meta: [{ title: "Customer — Smart Finance" }] }),
@@ -20,9 +20,11 @@ function CustomerDetail() {
   const savings = data.savings.filter((s) => s.customerId === id);
 
   const [showLoan, setShowLoan] = useState(false);
+  const [invested, setInvested] = useState("10000");
   const [amount, setAmount] = useState("10000");
   const [profit, setProfit] = useState("2000");
   const [duration, setDuration] = useState("120");
+  const [emiType, setEmiType] = useState<EmiType>("daily");
 
   const [showSaving, setShowSaving] = useState(false);
   const [savingAmt, setSavingAmt] = useState("");
@@ -30,18 +32,23 @@ function CustomerDetail() {
   if (!customer) return <AppShell title="Not found" showBack><div className="p-6">Customer not found</div></AppShell>;
 
   const requestLoan = () => {
-    const a = Number(amount), p = Number(profit), d = Number(duration);
+    const a = Number(amount), p = Number(profit), inv = Number(invested) || a, d = Number(duration);
     if (!a || !d) return;
+    const emi = calcEmi(a, p, d, emiType);
     db.update((dd) => {
       dd.loans.unshift({
         id: uid(),
         customerId: id,
         amount: a,
+        investedAmount: inv,
         profit: p,
         durationDays: d,
-        dailyEmi: Math.ceil((a + p) / d),
+        emiType,
+        dailyEmi: emi,
+        emiAmount: emi,
         status: session?.role === "owner" ? "approved" : "pending",
         startDate: session?.role === "owner" ? Date.now() : undefined,
+        endDate: session?.role === "owner" ? Date.now() + d * 86400000 : undefined,
         createdAt: Date.now(),
       });
     });
@@ -52,13 +59,13 @@ function CustomerDetail() {
     const a = Number(savingAmt);
     if (!a) return;
     db.update((dd) => {
-      dd.savings.unshift({ id: uid(), customerId: id, amount: a, date: Date.now() });
+      dd.savings.unshift({ id: uid(), customerId: id, amount: a, type: "deposit", date: Date.now() });
     });
     setSavingAmt("");
     setShowSaving(false);
   };
 
-  const totalSavings = savings.reduce((s, x) => s + x.amount, 0);
+  const totalSavings = savingsBalance(id, data.savings);
 
   return (
     <AppShell title={customer.name} showBack>
@@ -105,14 +112,20 @@ function CustomerDetail() {
         </div>
 
         {showLoan && (
-          <div className="mt-3 bg-card border border-border rounded-2xl p-4 space-y-3 shadow-soft">
-            <div className="grid grid-cols-3 gap-2">
+          <div className="mt-3 bg-card border border-border rounded-2xl p-4 space-y-3 shadow-soft animate-pop">
+            <div className="grid grid-cols-2 gap-2">
+              <Mini label="Invested" value={invested} onChange={setInvested} />
               <Mini label="Amount" value={amount} onChange={setAmount} />
               <Mini label="Profit" value={profit} onChange={setProfit} />
               <Mini label="Days" value={duration} onChange={setDuration} />
             </div>
+            <div className="flex gap-1 bg-muted rounded-xl p-1">
+              {(["daily", "weekly", "monthly"] as const).map((t) => (
+                <button key={t} type="button" onClick={() => setEmiType(t)} className={`flex-1 text-xs font-semibold py-2 rounded-lg capitalize ${emiType === t ? "bg-card shadow-soft" : "text-muted-foreground"}`}>{t}</button>
+              ))}
+            </div>
             <div className="text-xs text-muted-foreground">
-              Daily EMI: <span className="font-semibold text-foreground">{inr(Math.ceil((Number(amount) + Number(profit)) / Number(duration || 1)))}</span>
+              {emiType} EMI: <span className="font-semibold text-foreground">{inr(calcEmi(Number(amount), Number(profit), Number(duration || 1), emiType))}</span>
             </div>
             <button onClick={requestLoan} className="w-full bg-primary text-primary-foreground rounded-xl py-2.5 text-sm font-semibold">
               {session?.role === "owner" ? "Approve & Issue Loan" : "Request Approval"}
@@ -121,7 +134,7 @@ function CustomerDetail() {
         )}
 
         {showSaving && (
-          <div className="mt-3 bg-card border border-border rounded-2xl p-4 space-y-3 shadow-soft">
+          <div className="mt-3 bg-card border border-border rounded-2xl p-4 space-y-3 shadow-soft animate-pop">
             <Mini label="Saving Amount (₹)" value={savingAmt} onChange={setSavingAmt} />
             <button onClick={addSaving} className="w-full bg-primary text-primary-foreground rounded-xl py-2.5 text-sm font-semibold">
               Save
@@ -134,12 +147,13 @@ function CustomerDetail() {
           {loans.length === 0 && <p className="text-sm text-muted-foreground">No loans yet.</p>}
           {loans.map((loan) => {
             const { paid, totalDue, daysPaid, percent } = loanProgress(loan, data.emiPayments);
+            const totalUnits = loan.durationDays;
             return (
-              <div key={loan.id} className="bg-card border border-border rounded-2xl p-3 shadow-soft">
+              <div key={loan.id} className="bg-card border border-border rounded-2xl p-3 shadow-soft animate-pop">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="font-semibold text-sm">{inr(loan.amount)} <span className="text-muted-foreground font-normal">+ {inr(loan.profit)} profit</span></p>
-                    <p className="text-[11px] text-muted-foreground">{loan.durationDays} days · EMI {inr(loan.dailyEmi)}</p>
+                    <p className="text-[11px] text-muted-foreground">{loan.durationDays}d · {emiTypeOf(loan)} EMI {inr(emiAmountOf(loan))}</p>
                   </div>
                   <StatusBadge status={loan.status} />
                 </div>
@@ -148,7 +162,7 @@ function CustomerDetail() {
                 </div>
                 <div className="mt-2 flex justify-between text-[11px] text-muted-foreground">
                   <span>Paid {inr(paid)} / {inr(totalDue)}</span>
-                  <span>{daysPaid}/{loan.durationDays} days</span>
+                  <span>{daysPaid}/{totalUnits} units</span>
                 </div>
                 {loan.status === "approved" && (
                   <button
@@ -158,10 +172,15 @@ function CustomerDetail() {
                     <IndianRupee className="size-4" /> Collect EMI
                   </button>
                 )}
+                {loan.status === "completed" && (
+                  <Link to="/receipt/$loanId" params={{ loanId: loan.id }} className="mt-3 w-full bg-card border border-border rounded-xl py-2 text-sm font-semibold flex items-center justify-center gap-1">
+                    <ReceiptIcon className="size-4" /> View Receipt
+                  </Link>
+                )}
                 {loan.status === "pending" && session?.role === "owner" && (
                   <div className="mt-3 grid grid-cols-2 gap-2">
                     <button
-                      onClick={() => db.update((dd) => { const ll = dd.loans.find((x) => x.id === loan.id); if (ll) { ll.status = "approved"; ll.startDate = Date.now(); } })}
+                      onClick={() => db.update((dd) => { const ll = dd.loans.find((x) => x.id === loan.id); if (ll) { ll.status = "approved"; ll.startDate = Date.now(); ll.endDate = Date.now() + ll.durationDays * 86400000; } })}
                       className="bg-success text-success-foreground rounded-xl py-2 text-sm font-semibold"
                     >
                       Approve
