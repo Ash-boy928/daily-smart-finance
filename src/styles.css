@@ -124,4 +124,10 @@
   .shadow-card { box-shadow: var(--shadow-card); }
   .shadow-soft { box-shadow: var(--shadow-soft); }
   .safe-bottom { padding-bottom: max(env(safe-area-inset-bottom), 1rem); }
+  @keyframes sheet-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes pop-in { from { opacity: 0; transform: scale(.96) translateY(8px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+  .animate-sheet { animation: sheet-up .28s cubic-bezier(.2,.7,.2,1) both; }
+  .animate-fade { animation: fade-in .22s ease both; }
+  .animate-pop { animation: pop-in .22s cubic-bezier(.2,.7,.2,1) both; }
 }
