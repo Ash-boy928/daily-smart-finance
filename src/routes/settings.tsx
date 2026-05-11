@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { useSession, setSession } from "@/lib/store";
-import { ChevronRight, Receipt, PiggyBank, ClipboardCheck, Database, Bell, Info, LogOut, FileBarChart } from "lucide-react";
+import { ChevronRight, Receipt, PiggyBank, ClipboardCheck, Database, Bell, Info, LogOut, FileBarChart, TrendingUp, Users } from "lucide-react";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({ meta: [{ title: "Settings — Smart Finance" }] }),
@@ -27,10 +27,12 @@ function Settings() {
         </div>
 
         <Group>
-          <Item to="/loans" icon={<ClipboardCheck className="size-4" />} label="Loan Approvals" />
-          <Item to="/savings" icon={<PiggyBank className="size-4" />} label="Daily Savings" />
+          <Item to="/customers" icon={<Users className="size-4" />} label="All Customers" />
+          {isOwner && <Item to="/loans" icon={<ClipboardCheck className="size-4" />} label="Loan Approvals" />}
+          <Item to="/savings" icon={<PiggyBank className="size-4" />} label="Savings" />
+          {isOwner && <Item to="/profit" icon={<TrendingUp className="size-4" />} label="Profit Dashboard" />}
           {isOwner && <Item to="/expenses" icon={<Receipt className="size-4" />} label="Expense Management" />}
-          {isOwner && <Item to="/reports" icon={<FileBarChart className="size-4" />} label="Reports" />}
+          {isOwner && <Item to="/reports" icon={<FileBarChart className="size-4" />} label="Reports & Export" />}
         </Group>
 
         <Group>

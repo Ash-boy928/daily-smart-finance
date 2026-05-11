@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SavingsRouteImport } from './routes/savings'
 import { Route as ReportsRouteImport } from './routes/reports'
+import { Route as ProfitRouteImport } from './routes/profit'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LoansRouteImport } from './routes/loans'
 import { Route as ExpensesRouteImport } from './routes/expenses'
@@ -19,6 +20,7 @@ import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as CustomersRouteImport } from './routes/customers'
 import { Route as CollectRouteImport } from './routes/collect'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ReceiptLoanIdRouteImport } from './routes/receipt.$loanId'
 import { Route as CustomersNewRouteImport } from './routes/customers.new'
 import { Route as CustomersIdRouteImport } from './routes/customers.$id'
 
@@ -35,6 +37,11 @@ const SavingsRoute = SavingsRouteImport.update({
 const ReportsRoute = ReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfitRoute = ProfitRouteImport.update({
+  id: '/profit',
+  path: '/profit',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -72,6 +79,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ReceiptLoanIdRoute = ReceiptLoanIdRouteImport.update({
+  id: '/receipt/$loanId',
+  path: '/receipt/$loanId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CustomersNewRoute = CustomersNewRouteImport.update({
   id: '/new',
   path: '/new',
@@ -91,11 +103,13 @@ export interface FileRoutesByFullPath {
   '/expenses': typeof ExpensesRoute
   '/loans': typeof LoansRoute
   '/login': typeof LoginRoute
+  '/profit': typeof ProfitRoute
   '/reports': typeof ReportsRoute
   '/savings': typeof SavingsRoute
   '/settings': typeof SettingsRoute
   '/customers/$id': typeof CustomersIdRoute
   '/customers/new': typeof CustomersNewRoute
+  '/receipt/$loanId': typeof ReceiptLoanIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -105,11 +119,13 @@ export interface FileRoutesByTo {
   '/expenses': typeof ExpensesRoute
   '/loans': typeof LoansRoute
   '/login': typeof LoginRoute
+  '/profit': typeof ProfitRoute
   '/reports': typeof ReportsRoute
   '/savings': typeof SavingsRoute
   '/settings': typeof SettingsRoute
   '/customers/$id': typeof CustomersIdRoute
   '/customers/new': typeof CustomersNewRoute
+  '/receipt/$loanId': typeof ReceiptLoanIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -120,11 +136,13 @@ export interface FileRoutesById {
   '/expenses': typeof ExpensesRoute
   '/loans': typeof LoansRoute
   '/login': typeof LoginRoute
+  '/profit': typeof ProfitRoute
   '/reports': typeof ReportsRoute
   '/savings': typeof SavingsRoute
   '/settings': typeof SettingsRoute
   '/customers/$id': typeof CustomersIdRoute
   '/customers/new': typeof CustomersNewRoute
+  '/receipt/$loanId': typeof ReceiptLoanIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -136,11 +154,13 @@ export interface FileRouteTypes {
     | '/expenses'
     | '/loans'
     | '/login'
+    | '/profit'
     | '/reports'
     | '/savings'
     | '/settings'
     | '/customers/$id'
     | '/customers/new'
+    | '/receipt/$loanId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -150,11 +170,13 @@ export interface FileRouteTypes {
     | '/expenses'
     | '/loans'
     | '/login'
+    | '/profit'
     | '/reports'
     | '/savings'
     | '/settings'
     | '/customers/$id'
     | '/customers/new'
+    | '/receipt/$loanId'
   id:
     | '__root__'
     | '/'
@@ -164,11 +186,13 @@ export interface FileRouteTypes {
     | '/expenses'
     | '/loans'
     | '/login'
+    | '/profit'
     | '/reports'
     | '/savings'
     | '/settings'
     | '/customers/$id'
     | '/customers/new'
+    | '/receipt/$loanId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -179,9 +203,11 @@ export interface RootRouteChildren {
   ExpensesRoute: typeof ExpensesRoute
   LoansRoute: typeof LoansRoute
   LoginRoute: typeof LoginRoute
+  ProfitRoute: typeof ProfitRoute
   ReportsRoute: typeof ReportsRoute
   SavingsRoute: typeof SavingsRoute
   SettingsRoute: typeof SettingsRoute
+  ReceiptLoanIdRoute: typeof ReceiptLoanIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -205,6 +231,13 @@ declare module '@tanstack/react-router' {
       path: '/reports'
       fullPath: '/reports'
       preLoaderRoute: typeof ReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profit': {
+      id: '/profit'
+      path: '/profit'
+      fullPath: '/profit'
+      preLoaderRoute: typeof ProfitRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -256,6 +289,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/receipt/$loanId': {
+      id: '/receipt/$loanId'
+      path: '/receipt/$loanId'
+      fullPath: '/receipt/$loanId'
+      preLoaderRoute: typeof ReceiptLoanIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/customers/new': {
       id: '/customers/new'
       path: '/new'
@@ -295,20 +335,12 @@ const rootRouteChildren: RootRouteChildren = {
   ExpensesRoute: ExpensesRoute,
   LoansRoute: LoansRoute,
   LoginRoute: LoginRoute,
+  ProfitRoute: ProfitRoute,
   ReportsRoute: ReportsRoute,
   SavingsRoute: SavingsRoute,
   SettingsRoute: SettingsRoute,
+  ReceiptLoanIdRoute: ReceiptLoanIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

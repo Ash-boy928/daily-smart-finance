@@ -1,28 +1,36 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { AppShell } from "@/components/AppShell";
-import { useDB, db, uid, inr, MIN_LOANABLE } from "@/lib/store";
-import { PiggyBank, Sparkles, X } from "lucide-react";
+import { useDB, useSession, db, uid, inr, MIN_LOANABLE, savingsBalance, savingsInterestEarned, type SavingAccount } from "@/lib/store";
+import { PiggyBank, Sparkles, X, UserPlus, ArrowUpRight, ArrowDownLeft, Settings2 } from "lucide-react";
 
 export const Route = createFileRoute("/savings")({
-  head: () => ({ meta: [{ title: "Daily Savings — Smart Finance" }] }),
+  head: () => ({ meta: [{ title: "Savings — Smart Finance" }] }),
   component: Savings,
 });
 
+type Modal =
+  | { kind: "deposit"; customerId: string }
+  | { kind: "withdraw"; customerId: string }
+  | { kind: "account"; customerId: string }
+  | { kind: "addCustomer" }
+  | null;
+
 function Savings() {
   const data = useDB();
-  const [adding, setAdding] = useState<string | null>(null); // customerId
-  const [amount, setAmount] = useState("");
-  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const session = useSession();
+  const isOwner = session?.role === "owner";
   const [tab, setTab] = useState<"all" | "ready" | "history">("all");
+  const [modal, setModal] = useState<Modal>(null);
 
   const totals = useMemo(
     () =>
       data.customers
         .map((c) => {
           const list = data.savings.filter((s) => s.customerId === c.id).sort((a, b) => b.date - a.date);
-          const total = list.reduce((s, x) => s + x.amount, 0);
-          return { ...c, total, list };
+          const total = savingsBalance(c.id, data.savings);
+          const account = data.savingAccounts.find((a) => a.customerId === c.id);
+          return { ...c, total, list, account };
         })
         .sort((a, b) => b.total - a.total),
     [data]
@@ -30,23 +38,11 @@ function Savings() {
 
   const grand = totals.reduce((s, c) => s + c.total, 0);
   const readyCount = totals.filter((c) => c.total >= MIN_LOANABLE).length;
-
-  const save = () => {
-    const a = Number(amount);
-    if (!a || !adding) return;
-    const ts = new Date(date).getTime() || Date.now();
-    db.update((dd) => {
-      dd.savings.unshift({ id: uid(), customerId: adding, amount: a, date: ts });
-    });
-    setAmount("");
-    setAdding(null);
-  };
-
   const view = tab === "ready" ? totals.filter((c) => c.total >= MIN_LOANABLE) : totals;
 
   return (
-    <AppShell title="Daily Savings" showBack>
-      <div className="px-4 pt-4">
+    <AppShell title="Savings">
+      <div className="px-4 pt-4 animate-fade">
         <div className="bg-gradient-card text-primary-foreground rounded-2xl p-4 shadow-card">
           <p className="text-xs opacity-80">Total Savings Pool</p>
           <p className="text-2xl font-bold">{inr(grand)}</p>
@@ -55,14 +51,23 @@ function Savings() {
           </p>
         </div>
 
+        {isOwner && (
+          <button
+            onClick={() => setModal({ kind: "addCustomer" })}
+            className="mt-3 w-full bg-card border border-dashed border-primary/40 text-primary rounded-xl py-2.5 text-sm font-semibold flex items-center justify-center gap-2 active:scale-[0.99]"
+          >
+            <UserPlus className="size-4" /> Add Saving-Only Customer
+          </button>
+        )}
+
         <div className="mt-4 flex gap-1 bg-muted rounded-xl p-1">
           {(["all", "ready", "history"] as const).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
-              className={`flex-1 text-xs font-semibold py-2 rounded-lg ${tab === t ? "bg-card shadow-soft" : "text-muted-foreground"}`}
+              className={`flex-1 text-xs font-semibold py-2 rounded-lg transition ${tab === t ? "bg-card shadow-soft" : "text-muted-foreground"}`}
             >
-              {t === "all" ? "All" : t === "ready" ? "Ready to Lend" : "History"}
+              {t === "all" ? "All" : t === "ready" ? "Ready" : "History"}
             </button>
           ))}
         </div>
@@ -71,38 +76,53 @@ function Savings() {
           <div className="mt-3 space-y-2">
             {view.map((c) => {
               const ready = c.total >= MIN_LOANABLE;
+              const interest = c.account ? savingsInterestEarned(c.account, c.total) : 0;
               return (
                 <div
                   key={c.id}
-                  className={`rounded-2xl p-3 shadow-soft border ${
-                    ready
-                      ? "bg-accent border-primary/30 ring-1 ring-primary/40"
-                      : "bg-card border-border"
+                  className={`rounded-2xl p-3 shadow-soft border animate-pop ${
+                    ready ? "bg-accent border-primary/30 ring-1 ring-primary/40" : "bg-card border-border"
                   }`}
                 >
-                  <div className="flex justify-between items-center gap-2">
+                  <div className="flex justify-between items-start gap-2">
                     <Link to="/customers/$id" params={{ id: c.id }} className="min-w-0 flex-1">
                       <p className="font-semibold text-sm truncate flex items-center gap-1">
                         {c.name}
                         {ready && <Sparkles className="size-3 text-primary" />}
                       </p>
-                      <p className="text-[11px] text-muted-foreground">
-                        {c.phone} · {c.list.length} deposit{c.list.length === 1 ? "" : "s"}
-                      </p>
+                      <p className="text-[11px] text-muted-foreground">{c.phone}</p>
+                      {c.account && (
+                        <p className="text-[10px] text-muted-foreground mt-0.5">
+                          Maturity: {c.account.maturityMonths}m · Interest: {c.account.interestRatePct}% yr
+                          {interest > 0 && <span className="text-success"> · earned {inr(interest)}</span>}
+                        </p>
+                      )}
                     </Link>
                     <div className="text-right">
                       <p className={`text-sm font-bold ${ready ? "text-primary" : "text-success"}`}>{inr(c.total)}</p>
-                      <button
-                        onClick={() => {
-                          setAdding(c.id);
-                          setAmount("");
-                          setDate(new Date().toISOString().slice(0, 10));
-                        }}
-                        className="mt-1 text-[11px] bg-primary text-primary-foreground rounded-full px-2.5 py-1 font-semibold inline-flex items-center gap-1"
-                      >
-                        <PiggyBank className="size-3" /> Add
-                      </button>
+                      <p className="text-[10px] text-muted-foreground">{c.list.length} txns</p>
                     </div>
+                  </div>
+                  <div className="mt-2 flex gap-1.5 flex-wrap">
+                    <button
+                      onClick={() => setModal({ kind: "deposit", customerId: c.id })}
+                      className="text-[11px] bg-primary text-primary-foreground rounded-full px-3 py-1 font-semibold inline-flex items-center gap-1"
+                    >
+                      <ArrowDownLeft className="size-3" /> Deposit
+                    </button>
+                    <button
+                      onClick={() => setModal({ kind: "withdraw", customerId: c.id })}
+                      disabled={c.total <= 0}
+                      className="text-[11px] bg-card border border-border rounded-full px-3 py-1 font-semibold inline-flex items-center gap-1 disabled:opacity-40"
+                    >
+                      <ArrowUpRight className="size-3" /> Withdraw
+                    </button>
+                    <button
+                      onClick={() => setModal({ kind: "account", customerId: c.id })}
+                      className="text-[11px] bg-card border border-border rounded-full px-3 py-1 font-semibold inline-flex items-center gap-1"
+                    >
+                      <Settings2 className="size-3" /> {c.account ? (isOwner ? "Edit" : "View") : isOwner ? "Open A/c" : "View"}
+                    </button>
                   </div>
                   {ready && (
                     <p className="mt-2 text-[10px] font-medium text-primary">
@@ -128,13 +148,18 @@ function Savings() {
               .sort((a, b) => b.date - a.date)
               .map((s) => {
                 const c = data.customers.find((x) => x.id === s.customerId);
+                const isWith = s.type === "withdrawal";
                 return (
                   <div key={s.id} className="flex justify-between items-center p-3 text-sm">
                     <div>
                       <p className="font-medium">{c?.name ?? "—"}</p>
-                      <p className="text-[11px] text-muted-foreground">{new Date(s.date).toLocaleDateString()}</p>
+                      <p className="text-[11px] text-muted-foreground">
+                        {new Date(s.date).toLocaleDateString()} · {isWith ? "Withdraw" : "Deposit"}
+                      </p>
                     </div>
-                    <span className="font-semibold text-success">+ {inr(s.amount)}</span>
+                    <span className={`font-semibold ${isWith ? "text-destructive" : "text-success"}`}>
+                      {isWith ? "-" : "+"} {inr(s.amount)}
+                    </span>
                   </div>
                 );
               })}
@@ -142,40 +167,158 @@ function Savings() {
         )}
       </div>
 
-      {adding && (
-        <div className="fixed inset-0 z-50 bg-black/40 grid place-items-end sm:place-items-center" onClick={() => setAdding(null)}>
-          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md bg-card rounded-t-2xl sm:rounded-2xl p-5 shadow-card">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-semibold">
-                Add Saving — {data.customers.find((c) => c.id === adding)?.name}
-              </h3>
-              <button onClick={() => setAdding(null)} className="size-8 rounded-full bg-muted grid place-items-center">
-                <X className="size-4" />
-              </button>
-            </div>
-            <label className="text-xs text-muted-foreground">Amount (₹)</label>
-            <input
-              type="number"
-              autoFocus
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="e.g. 50"
-              className="mt-1 w-full rounded-xl border border-input bg-background px-3 py-3 text-lg font-semibold outline-none"
-            />
-            <label className="mt-3 block text-xs text-muted-foreground">Date</label>
-            <input
-              type="date"
-              value={date}
-              max={new Date().toISOString().slice(0, 10)}
-              onChange={(e) => setDate(e.target.value)}
-              className="mt-1 w-full rounded-xl border border-input bg-background px-3 py-2.5 outline-none"
-            />
-            <button onClick={save} className="mt-4 w-full bg-primary text-primary-foreground rounded-xl py-3 font-semibold">
-              Save Deposit
-            </button>
-          </div>
-        </div>
-      )}
+      {modal && <ModalSheet modal={modal} close={() => setModal(null)} isOwner={isOwner} />}
     </AppShell>
+  );
+}
+
+function ModalSheet({ modal, close, isOwner }: { modal: Exclude<Modal, null>; close: () => void; isOwner: boolean }) {
+  const data = useDB();
+  const customer =
+    modal.kind !== "addCustomer" ? data.customers.find((c) => c.id === modal.customerId) : undefined;
+  const account = customer ? data.savingAccounts.find((a) => a.customerId === customer.id) : undefined;
+  const balance = customer ? savingsBalance(customer.id, data.savings) : 0;
+
+  // shared state
+  const [amount, setAmount] = useState("");
+  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [note, setNote] = useState("");
+
+  // account editor
+  const [maturity, setMaturity] = useState(account?.maturityMonths ? String(account.maturityMonths) : "12");
+  const [rate, setRate] = useState(account?.interestRatePct != null ? String(account.interestRatePct) : "6");
+
+  // add customer
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+
+  const submit = () => {
+    if (modal.kind === "addCustomer") {
+      if (!name.trim() || !phone.trim()) return;
+      db.update((d) => {
+        const id = uid();
+        d.customers.unshift({ id, name: name.trim(), phone: phone.trim(), address: "", createdAt: Date.now() });
+        d.savingAccounts.push({
+          id: uid(),
+          customerId: id,
+          maturityMonths: Number(maturity) || 12,
+          interestRatePct: Number(rate) || 0,
+          openedAt: Date.now(),
+        });
+      });
+      close();
+      return;
+    }
+    if (modal.kind === "account") {
+      if (!isOwner) return close();
+      db.update((d) => {
+        const existing = d.savingAccounts.find((a) => a.customerId === modal.customerId);
+        if (existing) {
+          existing.maturityMonths = Number(maturity) || existing.maturityMonths;
+          existing.interestRatePct = Number(rate) || 0;
+        } else {
+          d.savingAccounts.push({
+            id: uid(),
+            customerId: modal.customerId,
+            maturityMonths: Number(maturity) || 12,
+            interestRatePct: Number(rate) || 0,
+            openedAt: Date.now(),
+          });
+        }
+      });
+      close();
+      return;
+    }
+    const a = Number(amount);
+    if (!a) return;
+    if (modal.kind === "withdraw" && a > balance) return;
+    const ts = new Date(date).getTime() || Date.now();
+    db.update((d) => {
+      d.savings.unshift({
+        id: uid(),
+        customerId: modal.customerId,
+        amount: a,
+        type: modal.kind === "withdraw" ? "withdrawal" : "deposit",
+        date: ts,
+        note: note || undefined,
+      });
+    });
+    close();
+  };
+
+  const titles: Record<typeof modal.kind, string> = {
+    deposit: `Deposit — ${customer?.name ?? ""}`,
+    withdraw: `Withdraw — ${customer?.name ?? ""}`,
+    account: `Saving Account — ${customer?.name ?? ""}`,
+    addCustomer: "Add Saving Customer",
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/40 grid place-items-end sm:place-items-center animate-fade" onClick={close}>
+      <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md bg-card rounded-t-2xl sm:rounded-2xl p-5 shadow-card animate-sheet">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-semibold">{titles[modal.kind]}</h3>
+          <button onClick={close} className="size-8 rounded-full bg-muted grid place-items-center"><X className="size-4" /></button>
+        </div>
+
+        {modal.kind === "addCustomer" && (
+          <div className="space-y-3">
+            <Input label="Full Name *" value={name} onChange={setName} />
+            <Input label="Phone *" value={phone} onChange={setPhone} type="tel" />
+            <div className="grid grid-cols-2 gap-2">
+              <Input label="Maturity (months)" value={maturity} onChange={setMaturity} type="number" />
+              <Input label="Interest yearly %" value={rate} onChange={setRate} type="number" />
+            </div>
+          </div>
+        )}
+
+        {modal.kind === "account" && (
+          <div className="space-y-3">
+            <p className="text-xs text-muted-foreground">Current balance: <span className="font-semibold text-foreground">{inr(balance)}</span></p>
+            <div className="grid grid-cols-2 gap-2">
+              <Input label="Maturity (months)" value={maturity} onChange={setMaturity} type="number" disabled={!isOwner} />
+              <Input label="Interest yearly %" value={rate} onChange={setRate} type="number" disabled={!isOwner} />
+            </div>
+            {account && (
+              <p className="text-[11px] text-muted-foreground">
+                Opened {new Date(account.openedAt).toLocaleDateString()} · Interest earned so far: {inr(savingsInterestEarned({ ...account, maturityMonths: Number(maturity) || account.maturityMonths, interestRatePct: Number(rate) || 0 }, balance))}
+              </p>
+            )}
+            {!isOwner && <p className="text-[11px] text-warning-foreground bg-warning/30 rounded-lg p-2">View only — only owner can edit.</p>}
+          </div>
+        )}
+
+        {(modal.kind === "deposit" || modal.kind === "withdraw") && (
+          <div className="space-y-3">
+            {modal.kind === "withdraw" && (
+              <p className="text-xs text-muted-foreground">Available: <span className="font-semibold text-foreground">{inr(balance)}</span></p>
+            )}
+            <Input label="Amount (₹)" value={amount} onChange={setAmount} type="number" autoFocus />
+            <Input label="Date" value={date} onChange={setDate} type="date" />
+            <Input label="Note (optional)" value={note} onChange={setNote} />
+          </div>
+        )}
+
+        <button onClick={submit} className="mt-4 w-full bg-primary text-primary-foreground rounded-xl py-3 font-semibold">
+          {modal.kind === "addCustomer" ? "Create Customer" : modal.kind === "account" ? (isOwner ? "Save" : "Close") : "Confirm"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function Input({ label, value, onChange, type = "text", autoFocus, disabled }: { label: string; value: string; onChange: (v: string) => void; type?: string; autoFocus?: boolean; disabled?: boolean }) {
+  return (
+    <div>
+      <label className="text-xs text-muted-foreground">{label}</label>
+      <input
+        autoFocus={autoFocus}
+        disabled={disabled}
+        type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="mt-1 w-full rounded-xl border border-input bg-background px-3 py-2.5 text-sm outline-none disabled:opacity-60"
+      />
+    </div>
   );
 }

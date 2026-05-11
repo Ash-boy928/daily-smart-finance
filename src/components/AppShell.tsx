@@ -1,20 +1,21 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { Home, Users, IndianRupee, FileBarChart, Settings as SettingsIcon, LogOut } from "lucide-react";
+import { Home, Users, IndianRupee, PiggyBank, TrendingUp, Settings as SettingsIcon, LogOut } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { useSession, setSession, type Role } from "@/lib/store";
 
 const navByRole: Record<Role, { to: string; label: string; icon: typeof Home }[]> = {
   owner: [
     { to: "/dashboard", label: "Home", icon: Home },
-    { to: "/customers", label: "Customers", icon: Users },
     { to: "/collect", label: "Collect", icon: IndianRupee },
-    { to: "/reports", label: "Reports", icon: FileBarChart },
+    { to: "/savings", label: "Savings", icon: PiggyBank },
+    { to: "/profit", label: "Profit", icon: TrendingUp },
     { to: "/settings", label: "More", icon: SettingsIcon },
   ],
   collector: [
     { to: "/dashboard", label: "Home", icon: Home },
     { to: "/customers", label: "Customers", icon: Users },
     { to: "/collect", label: "Collect", icon: IndianRupee },
+    { to: "/savings", label: "Savings", icon: PiggyBank },
     { to: "/settings", label: "More", icon: SettingsIcon },
   ],
 };
