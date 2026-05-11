@@ -1,8 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 import { AppShell } from "@/components/AppShell";
-import { db, uid } from "@/lib/store";
-import { Camera, Upload } from "lucide-react";
+import { db, uid, compressImage, calcEmi, useSession, type EmiType, inr } from "@/lib/store";
+import { Camera, Upload, Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/customers/new")({
   head: () => ({ meta: [{ title: "Add Customer — Smart Finance" }] }),
@@ -11,34 +11,87 @@ export const Route = createFileRoute("/customers/new")({
 
 function AddCustomer() {
   const navigate = useNavigate();
+  const session = useSession();
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [aadhaar, setAadhaar] = useState<string | undefined>();
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const onFile = (f: File | null) => {
+  const [giveLoan, setGiveLoan] = useState(false);
+  const [amount, setAmount] = useState("10000");
+  const [invested, setInvested] = useState("10000");
+  const [profit, setProfit] = useState("2000");
+  const [duration, setDuration] = useState("120");
+  const [emiType, setEmiType] = useState<EmiType>("daily");
+
+  const onFile = async (f: File | null) => {
     if (!f) return;
-    const reader = new FileReader();
-    reader.onload = () => setAadhaar(String(reader.result));
-    reader.readAsDataURL(f);
+    setBusy(true);
+    try {
+      const data = await compressImage(f, 800, 0.7);
+      setAadhaar(data);
+    } catch {
+      setErr("Photo upload failed");
+    } finally {
+      setBusy(false);
+    }
   };
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !phone) return;
+    setErr(null);
+    if (!name.trim()) return setErr("Name required");
+    if (!phone.trim() || phone.trim().length < 7) return setErr("Valid phone required");
     const id = uid();
-    db.update((d) => {
-      d.customers.unshift({ id, name, phone, address, aadhaarPhoto: aadhaar, createdAt: Date.now() });
-    });
-    navigate({ to: "/customers/$id", params: { id } });
+    try {
+      db.update((d) => {
+        d.customers.unshift({
+          id,
+          name: name.trim(),
+          phone: phone.trim(),
+          address: address.trim(),
+          aadhaarPhoto: aadhaar,
+          createdAt: Date.now(),
+        });
+        if (giveLoan) {
+          const a = Number(amount), p = Number(profit), inv = Number(invested) || a, dur = Number(duration);
+          if (a > 0 && dur > 0) {
+            const emi = calcEmi(a, p, dur, emiType);
+            const start = Date.now();
+            d.loans.unshift({
+              id: uid(),
+              customerId: id,
+              amount: a,
+              investedAmount: inv,
+              profit: p,
+              durationDays: dur,
+              emiType,
+              dailyEmi: emi,
+              emiAmount: emi,
+              status: session?.role === "owner" ? "approved" : "pending",
+              startDate: session?.role === "owner" ? start : undefined,
+              endDate: session?.role === "owner" ? start + dur * 86400000 : undefined,
+              createdAt: Date.now(),
+            });
+          }
+        }
+      });
+      navigate({ to: "/customers/$id", params: { id } });
+    } catch (e) {
+      setErr("Failed to save. " + (e instanceof Error ? e.message : ""));
+    }
   };
+
+  const emi = calcEmi(Number(amount) || 0, Number(profit) || 0, Number(duration) || 1, emiType);
 
   return (
     <AppShell title="Add Customer" showBack>
-      <form onSubmit={submit} className="px-4 pt-4 space-y-4">
-        <Field label="Full Name" value={name} onChange={setName} placeholder="e.g. Anita Sharma" />
-        <Field label="Phone" value={phone} onChange={setPhone} placeholder="10-digit mobile" type="tel" />
+      <form onSubmit={submit} className="px-4 pt-4 space-y-4 animate-fade">
+        <Field label="Full Name *" value={name} onChange={setName} placeholder="e.g. Anita Sharma" />
+        <Field label="Phone *" value={phone} onChange={setPhone} placeholder="10-digit mobile" type="tel" />
         <div>
           <label className="text-xs font-medium text-muted-foreground">Address</label>
           <textarea
@@ -57,7 +110,9 @@ function AddCustomer() {
             onClick={() => fileRef.current?.click()}
             className="mt-1 w-full rounded-xl border border-dashed border-border bg-card p-4 flex flex-col items-center gap-2 active:scale-[0.99]"
           >
-            {aadhaar ? (
+            {busy ? (
+              <Loader2 className="size-6 animate-spin text-primary" />
+            ) : aadhaar ? (
               <img src={aadhaar} alt="Aadhaar" className="max-h-40 rounded-lg object-contain" />
             ) : (
               <>
@@ -66,7 +121,7 @@ function AddCustomer() {
                 </div>
                 <span className="text-sm">Take photo or upload</span>
                 <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-                  <Upload className="size-3" /> JPG / PNG
+                  <Upload className="size-3" /> JPG / PNG (auto-compressed)
                 </span>
               </>
             )}
@@ -81,11 +136,42 @@ function AddCustomer() {
           />
         </div>
 
+        <label className="flex items-center gap-2 bg-accent/50 rounded-xl p-3 cursor-pointer">
+          <input type="checkbox" checked={giveLoan} onChange={(e) => setGiveLoan(e.target.checked)} className="size-4 accent-[var(--color-primary)]" />
+          <span className="text-sm font-medium">Issue a loan to this customer now</span>
+        </label>
+
+        {giveLoan && (
+          <div className="bg-card border border-border rounded-2xl p-4 space-y-3 shadow-soft animate-pop">
+            <div className="grid grid-cols-2 gap-2">
+              <Mini label="Invested (₹)" value={invested} onChange={setInvested} />
+              <Mini label="Loan amount (₹)" value={amount} onChange={setAmount} />
+              <Mini label="Profit (₹)" value={profit} onChange={setProfit} />
+              <Mini label="Duration (days)" value={duration} onChange={setDuration} />
+            </div>
+            <div>
+              <label className="text-[10px] font-medium text-muted-foreground">EMI Type</label>
+              <div className="mt-1 flex gap-1 bg-muted rounded-xl p-1">
+                {(["daily", "weekly", "monthly"] as const).map((t) => (
+                  <button key={t} type="button" onClick={() => setEmiType(t)} className={`flex-1 text-xs font-semibold py-2 rounded-lg capitalize ${emiType === t ? "bg-card shadow-soft" : "text-muted-foreground"}`}>{t}</button>
+                ))}
+              </div>
+            </div>
+            <div className="text-xs text-muted-foreground flex justify-between">
+              <span>EMI {emiType}: <span className="font-semibold text-foreground">{inr(emi)}</span></span>
+              <span>Total: <span className="font-semibold text-foreground">{inr(Number(amount) + Number(profit))}</span></span>
+            </div>
+          </div>
+        )}
+
+        {err && <p className="text-xs text-destructive bg-destructive/10 rounded-lg p-2">{err}</p>}
+
         <button
           type="submit"
-          className="w-full bg-primary text-primary-foreground rounded-xl py-3 font-semibold text-sm shadow-card active:scale-[0.99]"
+          disabled={busy}
+          className="w-full bg-primary text-primary-foreground rounded-xl py-3 font-semibold text-sm shadow-card active:scale-[0.99] disabled:opacity-60"
         >
-          Save Customer
+          {giveLoan ? "Save Customer & Issue Loan" : "Save Customer"}
         </button>
       </form>
     </AppShell>
@@ -102,6 +188,20 @@ function Field({ label, value, onChange, placeholder, type = "text" }: { label: 
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         className="mt-1 w-full rounded-xl border border-input bg-card px-3 py-2.5 text-sm outline-none"
+      />
+    </div>
+  );
+}
+
+function Mini({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  return (
+    <div>
+      <label className="text-[10px] font-medium text-muted-foreground">{label}</label>
+      <input
+        type="number"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="mt-1 w-full rounded-lg border border-input bg-background px-2 py-2 text-sm outline-none"
       />
     </div>
   );
