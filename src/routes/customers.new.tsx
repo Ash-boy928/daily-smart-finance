@@ -12,6 +12,7 @@ export const Route = createFileRoute("/customers/new")({
 function AddCustomer() {
   const navigate = useNavigate();
   const session = useSession();
+  const data = db.get();
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
@@ -26,6 +27,7 @@ function AddCustomer() {
   const [profit, setProfit] = useState("2000");
   const [duration, setDuration] = useState("120");
   const [emiType, setEmiType] = useState<EmiType>("daily");
+  const [collectorUsername, setCollectorUsername] = useState(data.collectorAccounts[0]?.username ?? "collector");
 
   const onFile = async (f: File | null) => {
     if (!f) return;
@@ -54,6 +56,7 @@ function AddCustomer() {
           phone: phone.trim(),
           address: address.trim(),
           aadhaarPhoto: aadhaar,
+          collectorUsername: collectorUsername || undefined,
           createdAt: Date.now(),
         });
         if (giveLoan) {
@@ -92,6 +95,20 @@ function AddCustomer() {
       <form onSubmit={submit} className="px-4 pt-4 space-y-4 animate-fade">
         <Field label="Full Name *" value={name} onChange={setName} placeholder="e.g. Anita Sharma" />
         <Field label="Phone *" value={phone} onChange={setPhone} placeholder="10-digit mobile" type="tel" />
+        {session?.role === "owner" && data.collectorAccounts.length > 0 && (
+          <div>
+            <label className="text-xs font-medium text-muted-foreground">Assign Collector</label>
+            <select
+              value={collectorUsername}
+              onChange={(e) => setCollectorUsername(e.target.value)}
+              className="mt-1 w-full rounded-xl border border-input bg-card px-3 py-2.5 text-sm outline-none"
+            >
+              {data.collectorAccounts.map((c) => (
+                <option key={c.username} value={c.username}>{c.name} ({c.username})</option>
+              ))}
+            </select>
+          </div>
+        )}
         <div>
           <label className="text-xs font-medium text-muted-foreground">Address</label>
           <textarea
@@ -144,7 +161,6 @@ function AddCustomer() {
         {giveLoan && (
           <div className="bg-card border border-border rounded-2xl p-4 space-y-3 shadow-soft animate-pop">
             <div className="grid grid-cols-2 gap-2">
-              <Mini label="Invested (₹)" value={invested} onChange={setInvested} />
               <Mini label="Loan amount (₹)" value={amount} onChange={setAmount} />
               <Mini label="Profit (₹)" value={profit} onChange={setProfit} />
               <Mini label="Duration (days)" value={duration} onChange={setDuration} />
