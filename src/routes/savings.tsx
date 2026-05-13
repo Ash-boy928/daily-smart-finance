@@ -308,7 +308,7 @@ function ModalSheet({ modal, close, isOwner }: { modal: Exclude<Modal, null>; cl
                 Opened {new Date(account.openedAt).toLocaleDateString()} · Interest earned so far: {inr(savingsInterestEarned({ ...account, maturityMonths: Number(maturity) || account.maturityMonths, interestRatePct: Number(rate) || 0 }, balance))}
               </p>
             )}
-            {!isOwner && <p className="text-[11px] text-warning-foreground bg-warning/30 rounded-lg p-2">View only — only owner can edit.</p>}
+            {!isOwner && <p className="text-[11px] text-warning-foreground bg-warning/30 rounded-lg p-2">View only — only Admin can edit.</p>}
           </div>
         )}
 
