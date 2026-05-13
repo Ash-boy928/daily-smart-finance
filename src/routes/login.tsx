@@ -1,17 +1,12 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { Sprout, User as UserIcon, Lock } from "lucide-react";
-import { setSession } from "@/lib/store";
+import { getLoginAccounts, setSession } from "@/lib/store";
 
 export const Route = createFileRoute("/login")({
   head: () => ({ meta: [{ title: "Login — Smart Finance" }] }),
   component: Login,
 });
-
-const accounts = [
-  { username: "owner", password: "owner123", role: "owner" as const, name: "Admin" },
-  { username: "collector", password: "collect123", role: "collector" as const, name: "Suresh" },
-];
 
 function Login() {
   const navigate = useNavigate();
@@ -20,6 +15,7 @@ function Login() {
   const [error, setError] = useState("");
 
   const handleLogin = (u: string, p: string) => {
+    const accounts = getLoginAccounts();
     const acc = accounts.find((a) => a.username === u && a.password === p);
     if (!acc) {
       setError("Invalid username or password");
@@ -60,7 +56,7 @@ function Login() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 className="flex-1 bg-transparent outline-none text-sm"
-                placeholder="owner or collector"
+                placeholder="admin or collector"
               />
             </div>
           </div>
@@ -93,7 +89,7 @@ function Login() {
             type="button"
             className="rounded-xl border border-border bg-card py-2.5 text-sm font-medium active:scale-[0.99]"
           >
-            Owner / Admin
+            Admin
           </button>
           <button
             onClick={() => handleLogin("collector", "collect123")}
