@@ -224,6 +224,16 @@ export function setSession(user: User | null) {
   sessionListeners.forEach((l) => l());
 }
 
+export function getLoginAccounts(): (User & { password: string })[] {
+  const collectors = read().collectorAccounts.map((c) => ({
+    username: c.username,
+    password: c.password,
+    role: "collector" as const,
+    name: c.name,
+  }));
+  return [{ username: "owner", password: "owner123", role: "owner", name: "Admin" }, ...collectors];
+}
+
 const sessionListeners = new Set<() => void>();
 
 export function useSession(): User | null {
@@ -302,6 +312,11 @@ export function expectedDueByNow(loan: Loan): number {
 
 export function isLoanOverdue(loan: Loan, payments: EmiPayment[]): boolean {
   if (loan.status !== "approved") return false;
+  const today = new Date().toDateString();
+  const paidToday = payments
+    .filter((p) => p.loanId === loan.id && new Date(p.date).toDateString() === today)
+    .reduce((s, p) => s + p.amount, 0);
+  if (paidToday >= emiAmountOf(loan)) return false;
   const paid = payments.filter((p) => p.loanId === loan.id).reduce((s, p) => s + p.amount, 0);
   return paid + 1 < expectedDueByNow(loan);
 }
@@ -314,7 +329,7 @@ export function savingsBalance(customerId: string, all: Saving[]): number {
 }
 
 export function savingsInterestEarned(account: SavingAccount, balance: number): number {
-  const months = (Date.now() - account.openedAt) / (86400000 * 30);
+  const months = Math.max(1, (Date.now() - account.openedAt) / (86400000 * 30));
   return Math.round((balance * account.interestRatePct * months) / 1200);
 }
 
