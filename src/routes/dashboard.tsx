@@ -17,7 +17,6 @@ function Dashboard() {
 
   const activeLoans = data.loans.filter((l) => l.status === "approved");
   const issuedLoans = data.loans.filter((l) => l.status === "approved" || l.status === "completed");
-  const totalInvested = issuedLoans.reduce((s, l) => s + (l.investedAmount ?? l.amount), 0);
   const totalReceivable = activeLoans.reduce((s, l) => s + loanProgress(l, data.emiPayments).remaining, 0);
   const totalCollected = data.emiPayments.reduce((s, p) => s + p.amount, 0);
   const totalExpenses = data.expenses.reduce((s, e) => s + e.amount, 0);
@@ -49,7 +48,6 @@ function Dashboard() {
         <Stat icon={<Wallet className="size-4" />} label="Active Loans" value={String(activeLoans.length)} />
         {isOwner && (
           <>
-            <Stat icon={<TrendingUp className="size-4" />} label="Capital Invested" value={inr(totalInvested)} />
             <Stat icon={<IndianRupee className="size-4" />} label="Total Receivable" value={inr(totalReceivable)} />
             <Stat icon={<TrendingUp className="size-4 text-success" />} label="Net Profit" value={inr(Math.max(0, netProfit))} highlight />
             <Stat icon={<AlertCircle className="size-4 text-destructive" />} label="Overdue" value={String(overdueCount)} danger={overdueCount > 0} />

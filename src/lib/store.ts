@@ -17,6 +17,14 @@ export interface Customer {
   phone: string;
   address: string;
   aadhaarPhoto?: string;
+  collectorUsername?: string;
+  createdAt: number;
+}
+
+export interface CollectorAccount {
+  username: string;
+  password: string;
+  name: string;
   createdAt: number;
 }
 
@@ -82,6 +90,8 @@ interface DB {
   savings: Saving[];
   savingAccounts: SavingAccount[];
   expenses: Expense[];
+  collectorAccounts: CollectorAccount[];
+  savingSmsAlerts: boolean;
   ownerCapital: number; // total capital owner injected
 }
 
@@ -90,9 +100,9 @@ const SESSION_KEY = "smartfinance_session_v1";
 
 const seed = (): DB => ({
   customers: [
-    { id: "c1", name: "Ravi Kumar", phone: "9876543210", address: "MG Road, Bangalore", createdAt: Date.now() - 86400000 * 30 },
-    { id: "c2", name: "Sita Devi", phone: "9123456780", address: "Anna Nagar, Chennai", createdAt: Date.now() - 86400000 * 20 },
-    { id: "c3", name: "Mohan Lal", phone: "9988776655", address: "Park Street, Kolkata", createdAt: Date.now() - 86400000 * 10 },
+    { id: "c1", name: "Ravi Kumar", phone: "9876543210", address: "MG Road, Bangalore", collectorUsername: "collector", createdAt: Date.now() - 86400000 * 30 },
+    { id: "c2", name: "Sita Devi", phone: "9123456780", address: "Anna Nagar, Chennai", collectorUsername: "collector", createdAt: Date.now() - 86400000 * 20 },
+    { id: "c3", name: "Mohan Lal", phone: "9988776655", address: "Park Street, Kolkata", collectorUsername: "collector", createdAt: Date.now() - 86400000 * 10 },
   ],
   loans: [
     { id: "l1", customerId: "c1", amount: 10000, investedAmount: 10000, profit: 2000, durationDays: 120, emiType: "daily", dailyEmi: 100, emiAmount: 100, status: "approved", startDate: Date.now() - 86400000 * 25, endDate: Date.now() - 86400000 * 25 + 120 * 86400000, createdAt: Date.now() - 86400000 * 26 },
@@ -113,6 +123,10 @@ const seed = (): DB => ({
     { id: "x1", category: "Office Rent", amount: 5000, note: "Monthly rent", date: Date.now() - 86400000 * 3 },
     { id: "x2", category: "Travel", amount: 800, note: "Collector fuel", date: Date.now() - 86400000 },
   ],
+  collectorAccounts: [
+    { username: "collector", password: "collect123", name: "Suresh", createdAt: Date.now() - 86400000 * 30 },
+  ],
+  savingSmsAlerts: false,
   ownerCapital: 100000,
 });
 
@@ -133,13 +147,19 @@ function read(): DB {
     }
     const parsed = JSON.parse(raw) as Partial<DB>;
     // safety: ensure new collections exist
+    const collectorAccounts = parsed.collectorAccounts ?? [
+      { username: "collector", password: "collect123", name: "Suresh", createdAt: Date.now() - 86400000 * 30 },
+    ];
+    const defaultCollector = collectorAccounts[0]?.username;
     const safe: DB = {
-      customers: parsed.customers ?? [],
+      customers: (parsed.customers ?? []).map((c) => ({ ...c, collectorUsername: c.collectorUsername ?? defaultCollector })),
       loans: parsed.loans ?? [],
       emiPayments: parsed.emiPayments ?? [],
       savings: parsed.savings ?? [],
       savingAccounts: parsed.savingAccounts ?? [],
       expenses: parsed.expenses ?? [],
+      collectorAccounts,
+      savingSmsAlerts: parsed.savingSmsAlerts ?? false,
       ownerCapital: parsed.ownerCapital ?? 0,
     };
     cachedSnapshot = safe;
@@ -207,6 +227,16 @@ export function setSession(user: User | null) {
   if (user) localStorage.setItem(SESSION_KEY, JSON.stringify(user));
   else localStorage.removeItem(SESSION_KEY);
   sessionListeners.forEach((l) => l());
+}
+
+export function getLoginAccounts(): (User & { password: string })[] {
+  const collectors = read().collectorAccounts.map((c) => ({
+    username: c.username,
+    password: c.password,
+    role: "collector" as const,
+    name: c.name,
+  }));
+  return [{ username: "owner", password: "owner123", role: "owner", name: "Admin" }, ...collectors];
 }
 
 const sessionListeners = new Set<() => void>();
@@ -287,8 +317,25 @@ export function expectedDueByNow(loan: Loan): number {
 
 export function isLoanOverdue(loan: Loan, payments: EmiPayment[]): boolean {
   if (loan.status !== "approved") return false;
+  const today = new Date().toDateString();
+  const paidToday = payments
+    .filter((p) => p.loanId === loan.id && new Date(p.date).toDateString() === today)
+    .reduce((s, p) => s + p.amount, 0);
+  if (paidToday >= emiAmountOf(loan)) return false;
   const paid = payments.filter((p) => p.loanId === loan.id).reduce((s, p) => s + p.amount, 0);
-  return paid + 1 < expectedDueByNow(loan);
+  return paid + 1 < expectedDueBeforeToday(loan);
+}
+
+function expectedDueBeforeToday(loan: Loan): number {
+  if (!loan.startDate) return 0;
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+  const elapsedDays = Math.max(0, Math.floor((startOfToday.getTime() - loan.startDate) / 86400000));
+  const t = emiTypeOf(loan);
+  let units = elapsedDays;
+  if (t === "weekly") units = Math.floor(elapsedDays / 7);
+  if (t === "monthly") units = Math.floor(elapsedDays / 30);
+  return Math.min(units, installmentsOf(loan)) * emiAmountOf(loan);
 }
 
 // Savings helpers
@@ -299,7 +346,7 @@ export function savingsBalance(customerId: string, all: Saving[]): number {
 }
 
 export function savingsInterestEarned(account: SavingAccount, balance: number): number {
-  const months = (Date.now() - account.openedAt) / (86400000 * 30);
+  const months = Math.max(1, (Date.now() - account.openedAt) / (86400000 * 30));
   return Math.round((balance * account.interestRatePct * months) / 1200);
 }
 

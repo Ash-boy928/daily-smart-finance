@@ -48,12 +48,11 @@ function Reports() {
       downloadCSV("collections.csv", rows);
     },
     loans: () => {
-      const rows: (string | number)[][] = [["Customer", "Invested", "Loan", "Profit", "Total", "EMI Type", "EMI", "Duration(d)", "Start", "End", "Status"]];
+      const rows: (string | number)[][] = [["Customer", "Loan", "Profit", "Total", "EMI Type", "EMI", "Duration(d)", "Start", "End", "Status"]];
       data.loans.forEach((l) => {
         const c = data.customers.find((x) => x.id === l.customerId);
         rows.push([
           c?.name ?? "—",
-          l.investedAmount ?? l.amount,
           l.amount,
           l.profit,
           l.amount + l.profit,
@@ -66,15 +65,6 @@ function Reports() {
         ]);
       });
       downloadCSV("loans.csv", rows);
-    },
-    investment: () => {
-      const rows: (string | number)[][] = [["Customer", "Invested", "Status", "Realized Profit", "Pending Profit"]];
-      data.loans.forEach((l) => {
-        const c = data.customers.find((x) => x.id === l.customerId);
-        const pr = loanProgress(l, data.emiPayments);
-        rows.push([c?.name ?? "—", l.investedAmount ?? l.amount, l.status, pr.realizedProfit, pr.pendingProfit]);
-      });
-      downloadCSV("investment.csv", rows);
     },
     pending: () => {
       const rows: (string | number)[][] = [["Customer", "Loan", "Total", "Collected", "Pending"]];
@@ -113,7 +103,6 @@ function Reports() {
           <div className="grid grid-cols-2 gap-2 p-3">
             <ExportBtn label="Collections" onClick={exports.collections} />
             <ExportBtn label="Loans" onClick={exports.loans} />
-            <ExportBtn label="Investment" onClick={exports.investment} />
             <ExportBtn label="Pending" onClick={exports.pending} />
             <ExportBtn label="Savings" onClick={exports.savings} />
             <ExportBtn label="Expenses" onClick={exports.expenses} />

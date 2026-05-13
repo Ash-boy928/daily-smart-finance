@@ -67,7 +67,7 @@ export function AppShell({ title, children, right, showBack }: Props) {
             <h1 className="text-lg font-semibold truncate">{title}</h1>
             {mounted && session && (
               <p className="text-xs opacity-80 truncate">
-                {session.name} · {session.role === "owner" ? "Owner" : "Collector"}
+                {session.name} · {session.role === "owner" ? "Admin" : "Collector"}
               </p>
             )}
           </div>

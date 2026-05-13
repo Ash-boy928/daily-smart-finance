@@ -1,7 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
 import { AppShell } from "@/components/AppShell";
-import { useSession, setSession } from "@/lib/store";
-import { ChevronRight, Receipt, PiggyBank, ClipboardCheck, Database, Bell, Info, LogOut, FileBarChart, TrendingUp, Users } from "lucide-react";
+import { useSession, setSession, useDB, db } from "@/lib/store";
+import { ChevronRight, Receipt, PiggyBank, ClipboardCheck, Database, Bell, Info, LogOut, FileBarChart, TrendingUp, Users, UserPlus, X } from "lucide-react";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({ meta: [{ title: "Settings — Smart Finance" }] }),
@@ -10,8 +11,10 @@ export const Route = createFileRoute("/settings")({
 
 function Settings() {
   const session = useSession();
+  const data = useDB();
   const navigate = useNavigate();
   const isOwner = session?.role === "owner";
+  const [showCollector, setShowCollector] = useState(false);
 
   return (
     <AppShell title="Settings">
@@ -22,9 +25,38 @@ function Settings() {
           </div>
           <div className="flex-1">
             <p className="font-semibold">{session?.name}</p>
-            <p className="text-xs text-muted-foreground">{isOwner ? "Owner / Admin" : "Loan Collector"}</p>
+            <p className="text-xs text-muted-foreground">{isOwner ? "Admin" : "Loan Collector"}</p>
           </div>
         </div>
+
+        {isOwner && (
+          <Group>
+            <button onClick={() => setShowCollector(true)} className="w-full flex items-center gap-3 px-4 py-3 text-sm active:bg-muted">
+              <span className="text-primary"><UserPlus className="size-4" /></span>
+              <span className="flex-1 text-left">Create Collector Account</span>
+              <ChevronRight className="size-4 text-muted-foreground" />
+            </button>
+            {data.collectorAccounts.map((collector) => {
+              const assigned = data.customers.filter((c) => c.collectorUsername === collector.username);
+              return (
+                <div key={collector.username} className="px-4 py-3 text-sm">
+                  <div className="flex justify-between gap-2">
+                    <div>
+                      <p className="font-semibold">{collector.name}</p>
+                      <p className="text-[11px] text-muted-foreground">{collector.username} · {assigned.length} customers</p>
+                    </div>
+                    <span className="text-[11px] text-primary font-semibold">Collector</span>
+                  </div>
+                  {assigned.length > 0 && (
+                    <p className="mt-1 text-[11px] text-muted-foreground line-clamp-2">
+                      {assigned.map((c) => c.name).join(", ")}
+                    </p>
+                  )}
+                </div>
+              );
+            })}
+          </Group>
+        )}
 
         <Group>
           <Item to="/customers" icon={<Users className="size-4" />} label="All Customers" />
@@ -52,7 +84,45 @@ function Settings() {
           Smart Finance · Microfinance & Daily Collection
         </p>
       </div>
+      {showCollector && <CollectorModal close={() => setShowCollector(false)} />}
     </AppShell>
+  );
+}
+
+function CollectorModal({ close }: { close: () => void }) {
+  const data = useDB();
+  const [name, setName] = useState("");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("collect123");
+  const [err, setErr] = useState("");
+
+  const save = () => {
+    setErr("");
+    const user = username.trim().toLowerCase();
+    if (!name.trim() || !user || !password.trim()) return setErr("Name, username and password required");
+    if (user === "owner" || data.collectorAccounts.some((c) => c.username === user)) return setErr("Username already exists");
+    db.update((d) => {
+      d.collectorAccounts.push({ username: user, password: password.trim(), name: name.trim(), createdAt: Date.now() });
+    });
+    close();
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/40 grid place-items-end sm:place-items-center animate-fade" onClick={close}>
+      <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md bg-card rounded-t-2xl sm:rounded-2xl p-5 shadow-card animate-sheet">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-semibold">Create Collector</h3>
+          <button onClick={close} className="size-8 rounded-full bg-muted grid place-items-center"><X className="size-4" /></button>
+        </div>
+        <div className="space-y-3">
+          <Input label="Collector Name" value={name} onChange={setName} />
+          <Input label="Username" value={username} onChange={setUsername} />
+          <Input label="Password" value={password} onChange={setPassword} />
+          {err && <p className="text-xs text-destructive bg-destructive/10 rounded-lg p-2">{err}</p>}
+          <button onClick={save} className="w-full bg-primary text-primary-foreground rounded-xl py-3 text-sm font-semibold">Save Collector</button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -74,6 +144,19 @@ function Row({ icon, label, right }: { icon: React.ReactNode; label: string; rig
       <span className="text-primary">{icon}</span>
       <span className="flex-1">{label}</span>
       {right}
+    </div>
+  );
+}
+
+function Input({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  return (
+    <div>
+      <label className="text-xs text-muted-foreground">{label}</label>
+      <input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="mt-1 w-full rounded-xl border border-input bg-background px-3 py-2.5 text-sm outline-none"
+      />
     </div>
   );
 }

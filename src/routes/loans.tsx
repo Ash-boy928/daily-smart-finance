@@ -48,7 +48,7 @@ function Loans() {
                       {cust?.name ?? "—"}
                     </Link>
                     <p className="text-[11px] text-muted-foreground">
-                      Invest {inr(loan.investedAmount ?? loan.amount)} · Loan {inr(loan.amount)} + Profit {inr(loan.profit)}
+                      Loan {inr(loan.amount)} + Profit {inr(loan.profit)}
                     </p>
                     <p className="text-[11px] text-muted-foreground">
                       {loan.durationDays}d · {type} EMI {inr(emi)}
@@ -102,14 +102,13 @@ function Loans() {
 function EditModal({ loanId, close }: { loanId: string; close: () => void }) {
   const data = useDB();
   const loan = data.loans.find((l) => l.id === loanId)!;
-  const [invested, setInvested] = useState(String(loan.investedAmount ?? loan.amount));
   const [amount, setAmount] = useState(String(loan.amount));
   const [profit, setProfit] = useState(String(loan.profit));
   const [duration, setDuration] = useState(String(loan.durationDays));
   const [emiType, setEmiType] = useState<EmiType>(emiTypeOf(loan));
   const [start, setStart] = useState(() => new Date(loan.startDate ?? Date.now()).toISOString().slice(0, 10));
 
-  const a = Number(amount), p = Number(profit), inv = Number(invested), d = Number(duration);
+  const a = Number(amount), p = Number(profit), d = Number(duration);
   const emi = calcEmi(a || 0, p || 0, d || 1, emiType);
   const startMs = new Date(start).getTime();
   const endMs = startMs + (d || 0) * 86400000;
@@ -118,7 +117,7 @@ function EditModal({ loanId, close }: { loanId: string; close: () => void }) {
     db.update((dd) => {
       const l = dd.loans.find((x) => x.id === loanId);
       if (!l) return;
-      l.investedAmount = inv;
+      l.investedAmount = a;
       l.amount = a;
       l.profit = p;
       l.durationDays = d;
@@ -141,7 +140,6 @@ function EditModal({ loanId, close }: { loanId: string; close: () => void }) {
         </div>
         <div className="space-y-3">
           <div className="grid grid-cols-2 gap-2">
-            <Mini label="Invested (₹)" value={invested} onChange={setInvested} />
             <Mini label="Loan amount (₹)" value={amount} onChange={setAmount} />
             <Mini label="Profit (₹)" value={profit} onChange={setProfit} />
             <Mini label="Duration (days)" value={duration} onChange={setDuration} />
