@@ -321,7 +321,19 @@ export function isLoanOverdue(loan: Loan, payments: EmiPayment[]): boolean {
     .reduce((s, p) => s + p.amount, 0);
   if (paidToday >= emiAmountOf(loan)) return false;
   const paid = payments.filter((p) => p.loanId === loan.id).reduce((s, p) => s + p.amount, 0);
-  return paid + 1 < expectedDueByNow(loan);
+  return paid + 1 < expectedDueBeforeToday(loan);
+}
+
+function expectedDueBeforeToday(loan: Loan): number {
+  if (!loan.startDate) return 0;
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+  const elapsedDays = Math.max(0, Math.floor((startOfToday.getTime() - loan.startDate) / 86400000));
+  const t = emiTypeOf(loan);
+  let units = elapsedDays;
+  if (t === "weekly") units = Math.floor(elapsedDays / 7);
+  if (t === "monthly") units = Math.floor(elapsedDays / 30);
+  return Math.min(units, installmentsOf(loan)) * emiAmountOf(loan);
 }
 
 // Savings helpers
