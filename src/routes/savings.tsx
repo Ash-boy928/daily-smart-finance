@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { useDB, useSession, db, uid, inr, MIN_LOANABLE, savingsBalance, savingsInterestEarned, type SavingAccount } from "@/lib/store";
-import { PiggyBank, Sparkles, X, UserPlus, ArrowUpRight, ArrowDownLeft, Settings2 } from "lucide-react";
+import { PiggyBank, Sparkles, X, UserPlus, ArrowUpRight, ArrowDownLeft, Settings2, Search, Bell } from "lucide-react";
 
 export const Route = createFileRoute("/savings")({
   head: () => ({ meta: [{ title: "Savings — Smart Finance" }] }),
@@ -22,6 +22,7 @@ function Savings() {
   const isOwner = session?.role === "owner";
   const [tab, setTab] = useState<"all" | "ready" | "history">("all");
   const [modal, setModal] = useState<Modal>(null);
+  const [q, setQ] = useState("");
 
   const totals = useMemo(
     () =>
@@ -29,7 +30,8 @@ function Savings() {
         .map((c) => {
           const list = data.savings.filter((s) => s.customerId === c.id).sort((a, b) => b.date - a.date);
           const total = savingsBalance(c.id, data.savings);
-          const account = data.savingAccounts.find((a) => a.customerId === c.id);
+          const savedAccount = data.savingAccounts.find((a) => a.customerId === c.id);
+          const account = savedAccount ?? (list.length > 0 ? { id: `auto-${c.id}`, customerId: c.id, maturityMonths: 12, interestRatePct: 6, openedAt: list[list.length - 1].date } satisfies SavingAccount : undefined);
           return { ...c, total, list, account };
         })
         .sort((a, b) => b.total - a.total),
@@ -38,7 +40,8 @@ function Savings() {
 
   const grand = totals.reduce((s, c) => s + c.total, 0);
   const readyCount = totals.filter((c) => c.total >= MIN_LOANABLE).length;
-  const view = tab === "ready" ? totals.filter((c) => c.total >= MIN_LOANABLE) : totals;
+  const searched = totals.filter((c) => !q || c.name.toLowerCase().includes(q.toLowerCase()) || c.phone.includes(q));
+  const view = tab === "ready" ? searched.filter((c) => c.total >= MIN_LOANABLE) : searched;
 
   return (
     <AppShell title="Savings">
@@ -52,15 +55,33 @@ function Savings() {
         </div>
 
         {isOwner && (
-          <button
-            onClick={() => setModal({ kind: "addCustomer" })}
-            className="mt-3 w-full bg-card border border-dashed border-primary/40 text-primary rounded-xl py-2.5 text-sm font-semibold flex items-center justify-center gap-2 active:scale-[0.99]"
-          >
-            <UserPlus className="size-4" /> Add Saving-Only Customer
-          </button>
+          <div className="mt-3 grid grid-cols-1 gap-2">
+            <button
+              onClick={() => setModal({ kind: "addCustomer" })}
+              className="w-full bg-card border border-dashed border-primary/40 text-primary rounded-xl py-2.5 text-sm font-semibold flex items-center justify-center gap-2 active:scale-[0.99]"
+            >
+              <UserPlus className="size-4" /> Add Saving-Only Customer
+            </button>
+            <button
+              onClick={() => db.update((d) => { d.savingSmsAlerts = !d.savingSmsAlerts; })}
+              className="w-full bg-card border border-border rounded-xl py-2.5 text-xs font-semibold flex items-center justify-center gap-2 active:scale-[0.99]"
+            >
+              <Bell className="size-4 text-primary" /> Saving SMS Alert: {data.savingSmsAlerts ? "On" : "Off / setup later"}
+            </button>
+          </div>
         )}
 
-        <div className="mt-4 flex gap-1 bg-muted rounded-xl p-1">
+        <div className="mt-4 flex items-center gap-2 rounded-xl border border-input bg-card px-3 py-2.5 shadow-soft">
+          <Search className="size-4 text-muted-foreground" />
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Search saving customer"
+            className="flex-1 bg-transparent outline-none text-sm"
+          />
+        </div>
+
+        <div className="mt-3 flex gap-1 bg-muted rounded-xl p-1">
           {(["all", "ready", "history"] as const).map((t) => (
             <button
               key={t}
