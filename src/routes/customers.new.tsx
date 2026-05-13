@@ -23,7 +23,6 @@ function AddCustomer() {
 
   const [giveLoan, setGiveLoan] = useState(false);
   const [amount, setAmount] = useState("10000");
-  const [invested, setInvested] = useState("10000");
   const [profit, setProfit] = useState("2000");
   const [duration, setDuration] = useState("120");
   const [emiType, setEmiType] = useState<EmiType>("daily");
@@ -60,7 +59,7 @@ function AddCustomer() {
           createdAt: Date.now(),
         });
         if (giveLoan) {
-          const a = Number(amount), p = Number(profit), inv = Number(invested) || a, dur = Number(duration);
+          const a = Number(amount), p = Number(profit), dur = Number(duration);
           if (a > 0 && dur > 0) {
             const emi = calcEmi(a, p, dur, emiType);
             const start = Date.now();
@@ -68,7 +67,7 @@ function AddCustomer() {
               id: uid(),
               customerId: id,
               amount: a,
-              investedAmount: inv,
+              investedAmount: a,
               profit: p,
               durationDays: dur,
               emiType,
