@@ -147,16 +147,18 @@ function read(): DB {
     }
     const parsed = JSON.parse(raw) as Partial<DB>;
     // safety: ensure new collections exist
+    const collectorAccounts = parsed.collectorAccounts ?? [
+      { username: "collector", password: "collect123", name: "Suresh", createdAt: Date.now() - 86400000 * 30 },
+    ];
+    const defaultCollector = collectorAccounts[0]?.username;
     const safe: DB = {
-      customers: parsed.customers ?? [],
+      customers: (parsed.customers ?? []).map((c) => ({ ...c, collectorUsername: c.collectorUsername ?? defaultCollector })),
       loans: parsed.loans ?? [],
       emiPayments: parsed.emiPayments ?? [],
       savings: parsed.savings ?? [],
       savingAccounts: parsed.savingAccounts ?? [],
       expenses: parsed.expenses ?? [],
-      collectorAccounts: parsed.collectorAccounts ?? [
-        { username: "collector", password: "collect123", name: "Suresh", createdAt: Date.now() - 86400000 * 30 },
-      ],
+      collectorAccounts,
       savingSmsAlerts: parsed.savingSmsAlerts ?? false,
       ownerCapital: parsed.ownerCapital ?? 0,
     };
