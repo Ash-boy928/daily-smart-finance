@@ -17,6 +17,14 @@ export interface Customer {
   phone: string;
   address: string;
   aadhaarPhoto?: string;
+  collectorUsername?: string;
+  createdAt: number;
+}
+
+export interface CollectorAccount {
+  username: string;
+  password: string;
+  name: string;
   createdAt: number;
 }
 
@@ -82,6 +90,7 @@ interface DB {
   savings: Saving[];
   savingAccounts: SavingAccount[];
   expenses: Expense[];
+  collectorAccounts: CollectorAccount[];
   ownerCapital: number; // total capital owner injected
 }
 
@@ -90,9 +99,9 @@ const SESSION_KEY = "smartfinance_session_v1";
 
 const seed = (): DB => ({
   customers: [
-    { id: "c1", name: "Ravi Kumar", phone: "9876543210", address: "MG Road, Bangalore", createdAt: Date.now() - 86400000 * 30 },
-    { id: "c2", name: "Sita Devi", phone: "9123456780", address: "Anna Nagar, Chennai", createdAt: Date.now() - 86400000 * 20 },
-    { id: "c3", name: "Mohan Lal", phone: "9988776655", address: "Park Street, Kolkata", createdAt: Date.now() - 86400000 * 10 },
+    { id: "c1", name: "Ravi Kumar", phone: "9876543210", address: "MG Road, Bangalore", collectorUsername: "collector", createdAt: Date.now() - 86400000 * 30 },
+    { id: "c2", name: "Sita Devi", phone: "9123456780", address: "Anna Nagar, Chennai", collectorUsername: "collector", createdAt: Date.now() - 86400000 * 20 },
+    { id: "c3", name: "Mohan Lal", phone: "9988776655", address: "Park Street, Kolkata", collectorUsername: "collector", createdAt: Date.now() - 86400000 * 10 },
   ],
   loans: [
     { id: "l1", customerId: "c1", amount: 10000, investedAmount: 10000, profit: 2000, durationDays: 120, emiType: "daily", dailyEmi: 100, emiAmount: 100, status: "approved", startDate: Date.now() - 86400000 * 25, endDate: Date.now() - 86400000 * 25 + 120 * 86400000, createdAt: Date.now() - 86400000 * 26 },
@@ -112,6 +121,9 @@ const seed = (): DB => ({
   expenses: [
     { id: "x1", category: "Office Rent", amount: 5000, note: "Monthly rent", date: Date.now() - 86400000 * 3 },
     { id: "x2", category: "Travel", amount: 800, note: "Collector fuel", date: Date.now() - 86400000 },
+  ],
+  collectorAccounts: [
+    { username: "collector", password: "collect123", name: "Suresh", createdAt: Date.now() - 86400000 * 30 },
   ],
   ownerCapital: 100000,
 });
@@ -140,6 +152,9 @@ function read(): DB {
       savings: parsed.savings ?? [],
       savingAccounts: parsed.savingAccounts ?? [],
       expenses: parsed.expenses ?? [],
+      collectorAccounts: parsed.collectorAccounts ?? [
+        { username: "collector", password: "collect123", name: "Suresh", createdAt: Date.now() - 86400000 * 30 },
+      ],
       ownerCapital: parsed.ownerCapital ?? 0,
     };
     cachedSnapshot = safe;
