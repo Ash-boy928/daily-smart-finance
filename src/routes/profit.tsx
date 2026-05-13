@@ -12,14 +12,6 @@ function Profit() {
   const data = useDB();
   const isInRange = (ts: number, days: number) => Date.now() - ts <= days * 86400000;
 
-  const investedTotal = data.loans
-    .filter((l) => l.status === "approved" || l.status === "completed")
-    .reduce((s, l) => s + (l.investedAmount ?? l.amount), 0);
-
-  const activeInvested = data.loans
-    .filter((l) => l.status === "approved")
-    .reduce((s, l) => s + (l.investedAmount ?? l.amount), 0);
-
   const expectedProfit = data.loans
     .filter((l) => l.status === "approved" || l.status === "completed")
     .reduce((s, l) => s + l.profit, 0);
@@ -46,14 +38,13 @@ function Profit() {
 
   const exportCSV = () => {
     const rows: (string | number)[][] = [
-      ["Customer", "Invested", "Loan", "Total Payable", "Collected", "Remaining", "Earned Profit", "Pending Profit", "Status"],
+      ["Customer", "Loan", "Total Payable", "Collected", "Remaining", "Earned Profit", "Pending Profit", "Status"],
     ];
     data.loans.forEach((l) => {
       const c = data.customers.find((x) => x.id === l.customerId);
       const pr = loanProgress(l, data.emiPayments);
       rows.push([
         c?.name ?? "—",
-        l.investedAmount ?? l.amount,
         l.amount,
         l.amount + l.profit,
         pr.paid,
@@ -80,12 +71,9 @@ function Profit() {
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          <Tile label="Total Invested" value={inr(investedTotal)} />
-          <Tile label="Active Investment" value={inr(activeInvested)} />
           <Tile label="Expected Profit" value={inr(expectedProfit)} />
           <Tile label="Pending Profit" value={inr(pending)} highlight />
           <Tile label="Closed Loan Profit" value={inr(closedProfit)} />
-          <Tile label="Owner Capital" value={inr(data.ownerCapital)} />
         </div>
 
         <div className="flex items-center justify-between">
@@ -100,7 +88,6 @@ function Profit() {
             <thead className="bg-muted text-muted-foreground">
               <tr>
                 <th className="text-left p-2">Customer</th>
-                <th className="text-right p-2">Invest</th>
                 <th className="text-right p-2">Loan</th>
                 <th className="text-right p-2">Earned</th>
                 <th className="text-right p-2">Pending</th>
@@ -113,7 +100,6 @@ function Profit() {
                 return (
                   <tr key={l.id} className="border-t border-border">
                     <td className="p-2 truncate max-w-[100px]"><Link to="/customers/$id" params={{ id: l.customerId }}>{c?.name}</Link></td>
-                    <td className="p-2 text-right">{inr(l.investedAmount ?? l.amount)}</td>
                     <td className="p-2 text-right">{inr(l.amount)}</td>
                     <td className="p-2 text-right text-success font-semibold">{inr(pr.realizedProfit)}</td>
                     <td className="p-2 text-right text-warning-foreground">{inr(pr.pendingProfit)}</td>
