@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { useDB, inr } from "@/lib/store";
@@ -11,10 +11,13 @@ export const Route = createFileRoute("/customers")({
 
 function Customers() {
   const db = useDB();
+  const path = useRouterState({ select: (s) => s.location.pathname });
   const [q, setQ] = useState("");
   const filtered = db.customers.filter(
     (c) => c.name.toLowerCase().includes(q.toLowerCase()) || c.phone.includes(q),
   );
+
+  if (path !== "/customers") return <Outlet />;
 
   return (
     <AppShell
