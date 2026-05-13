@@ -263,6 +263,9 @@ function ModalSheet({ modal, close, isOwner }: { modal: Exclude<Modal, null>; cl
         date: ts,
         note: note || undefined,
       });
+      if (modal.kind === "deposit" && !d.savingAccounts.some((x) => x.customerId === modal.customerId)) {
+        d.savingAccounts.push({ id: uid(), customerId: modal.customerId, maturityMonths: 12, interestRatePct: 6, openedAt: ts });
+      }
     });
     close();
   };
@@ -317,6 +320,11 @@ function ModalSheet({ modal, close, isOwner }: { modal: Exclude<Modal, null>; cl
             <Input label="Amount (₹)" value={amount} onChange={setAmount} type="number" autoFocus />
             <Input label="Date" value={date} onChange={setDate} type="date" />
             <Input label="Note (optional)" value={note} onChange={setNote} />
+            {modal.kind === "deposit" && (
+              <p className="text-[11px] text-muted-foreground bg-muted rounded-lg p-2">
+                SMS alert: {data.savingSmsAlerts ? "ready when SMS setup is connected" : "off — setup later"}
+              </p>
+            )}
           </div>
         )}
 
