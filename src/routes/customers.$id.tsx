@@ -20,7 +20,6 @@ function CustomerDetail() {
   const savings = data.savings.filter((s) => s.customerId === id);
 
   const [showLoan, setShowLoan] = useState(false);
-  const [invested, setInvested] = useState("10000");
   const [amount, setAmount] = useState("10000");
   const [profit, setProfit] = useState("2000");
   const [duration, setDuration] = useState("120");
@@ -32,7 +31,7 @@ function CustomerDetail() {
   if (!customer) return <AppShell title="Not found" showBack><div className="p-6">Customer not found</div></AppShell>;
 
   const requestLoan = () => {
-    const a = Number(amount), p = Number(profit), inv = Number(invested) || a, d = Number(duration);
+    const a = Number(amount), p = Number(profit), d = Number(duration);
     if (!a || !d) return;
     const emi = calcEmi(a, p, d, emiType);
     db.update((dd) => {
@@ -40,7 +39,7 @@ function CustomerDetail() {
         id: uid(),
         customerId: id,
         amount: a,
-        investedAmount: inv,
+        investedAmount: a,
         profit: p,
         durationDays: d,
         emiType,
@@ -114,7 +113,6 @@ function CustomerDetail() {
         {showLoan && (
           <div className="mt-3 bg-card border border-border rounded-2xl p-4 space-y-3 shadow-soft animate-pop">
             <div className="grid grid-cols-2 gap-2">
-              <Mini label="Invested" value={invested} onChange={setInvested} />
               <Mini label="Amount" value={amount} onChange={setAmount} />
               <Mini label="Profit" value={profit} onChange={setProfit} />
               <Mini label="Days" value={duration} onChange={setDuration} />
