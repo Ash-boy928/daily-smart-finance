@@ -107,7 +107,7 @@ function Profit() {
                 );
               })}
               {data.loans.length === 0 && (
-                <tr><td colSpan={5} className="text-center text-muted-foreground py-6">No loans yet</td></tr>
+                <tr><td colSpan={4} className="text-center text-muted-foreground py-6">No loans yet</td></tr>
               )}
             </tbody>
           </table>
