@@ -91,6 +91,7 @@ interface DB {
   savingAccounts: SavingAccount[];
   expenses: Expense[];
   collectorAccounts: CollectorAccount[];
+  savingSmsAlerts: boolean;
   ownerCapital: number; // total capital owner injected
 }
 
@@ -125,6 +126,7 @@ const seed = (): DB => ({
   collectorAccounts: [
     { username: "collector", password: "collect123", name: "Suresh", createdAt: Date.now() - 86400000 * 30 },
   ],
+  savingSmsAlerts: false,
   ownerCapital: 100000,
 });
 
@@ -155,6 +157,7 @@ function read(): DB {
       collectorAccounts: parsed.collectorAccounts ?? [
         { username: "collector", password: "collect123", name: "Suresh", createdAt: Date.now() - 86400000 * 30 },
       ],
+      savingSmsAlerts: parsed.savingSmsAlerts ?? false,
       ownerCapital: parsed.ownerCapital ?? 0,
     };
     cachedSnapshot = safe;
