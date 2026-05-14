@@ -20,13 +20,18 @@ function Savings() {
   const data = useDB();
   const session = useSession();
   const isOwner = session?.role === "owner";
+  const isCollector = session?.role === "collector";
   const [tab, setTab] = useState<"all" | "ready" | "history">("all");
   const [modal, setModal] = useState<Modal>(null);
   const [q, setQ] = useState("");
 
+  const scopedCustomers = isCollector
+    ? data.customers.filter((c) => c.collectorUsername === session!.username)
+    : data.customers;
+
   const totals = useMemo(
     () =>
-      data.customers
+      scopedCustomers
         .map((c) => {
           const list = data.savings.filter((s) => s.customerId === c.id).sort((a, b) => b.date - a.date);
           const total = savingsBalance(c.id, data.savings);
@@ -35,13 +40,17 @@ function Savings() {
           return { ...c, total, list, account };
         })
         .sort((a, b) => b.total - a.total),
-    [data]
+    [data, scopedCustomers]
   );
 
   const grand = totals.reduce((s, c) => s + c.total, 0);
   const readyCount = totals.filter((c) => c.total >= MIN_LOANABLE).length;
   const searched = totals.filter((c) => !q || c.name.toLowerCase().includes(q.toLowerCase()) || c.phone.includes(q));
   const view = tab === "ready" ? searched.filter((c) => c.total >= MIN_LOANABLE) : searched;
+  const tabs = isCollector ? (["all", "history"] as const) : (["all", "ready", "history"] as const);
+  const scopedSavings = isCollector
+    ? data.savings.filter((s) => scopedCustomers.some((c) => c.id === s.customerId))
+    : data.savings;
 
   return (
     <AppShell title="Savings">
@@ -49,27 +58,29 @@ function Savings() {
         <div className="bg-gradient-card text-primary-foreground rounded-2xl p-4 shadow-card">
           <p className="text-xs opacity-80">Total Savings Pool</p>
           <p className="text-2xl font-bold">{inr(grand)}</p>
-          <p className="mt-1 text-[11px] opacity-80">
-            {readyCount} customer{readyCount === 1 ? "" : "s"} ready to lend (≥ {inr(MIN_LOANABLE)})
-          </p>
+          {isOwner && (
+            <p className="mt-1 text-[11px] opacity-80">
+              {readyCount} customer{readyCount === 1 ? "" : "s"} ready to lend (≥ {inr(MIN_LOANABLE)})
+            </p>
+          )}
         </div>
 
-        {isOwner && (
-          <div className="mt-3 grid grid-cols-1 gap-2">
-            <button
-              onClick={() => setModal({ kind: "addCustomer" })}
-              className="w-full bg-card border border-dashed border-primary/40 text-primary rounded-xl py-2.5 text-sm font-semibold flex items-center justify-center gap-2 active:scale-[0.99]"
-            >
-              <UserPlus className="size-4" /> Add Saving-Only Customer
-            </button>
+        <div className="mt-3 grid grid-cols-1 gap-2">
+          <button
+            onClick={() => setModal({ kind: "addCustomer" })}
+            className="w-full bg-card border border-dashed border-primary/40 text-primary rounded-xl py-2.5 text-sm font-semibold flex items-center justify-center gap-2 active:scale-[0.99]"
+          >
+            <UserPlus className="size-4" /> Add Saving Customer
+          </button>
+          {isOwner && (
             <button
               onClick={() => db.update((d) => { d.savingSmsAlerts = !d.savingSmsAlerts; })}
               className="w-full bg-card border border-border rounded-xl py-2.5 text-xs font-semibold flex items-center justify-center gap-2 active:scale-[0.99]"
             >
               <Bell className="size-4 text-primary" /> Saving SMS Alert: {data.savingSmsAlerts ? "On" : "Off / setup later"}
             </button>
-          </div>
-        )}
+          )}
+        </div>
 
         <div className="mt-4 flex items-center gap-2 rounded-xl border border-input bg-card px-3 py-2.5 shadow-soft">
           <Search className="size-4 text-muted-foreground" />
@@ -82,7 +93,7 @@ function Savings() {
         </div>
 
         <div className="mt-3 flex gap-1 bg-muted rounded-xl p-1">
-          {(["all", "ready", "history"] as const).map((t) => (
+          {tabs.map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
