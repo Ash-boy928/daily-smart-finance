@@ -1,8 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { AppShell } from "@/components/AppShell";
-import { useSession, setSession, useDB, db } from "@/lib/store";
-import { ChevronRight, Receipt, PiggyBank, ClipboardCheck, Database, Bell, Info, LogOut, FileBarChart, TrendingUp, Users, UserPlus, X } from "lucide-react";
+import { useSession, setSession, useDB, db, compressImage } from "@/lib/store";
+import { ChevronRight, Receipt, PiggyBank, ClipboardCheck, Database, Bell, Info, LogOut, FileBarChart, TrendingUp, Users, UserPlus, X, Camera } from "lucide-react";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({ meta: [{ title: "Settings — Smart Finance" }] }),
