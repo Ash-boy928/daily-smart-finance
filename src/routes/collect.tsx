@@ -58,7 +58,9 @@ function Collect() {
     setTimeout(() => setToast(null), 2500);
   };
 
-  const totalCollectedToday = data.emiPayments.filter((p) => isToday(p.date)).reduce((s, p) => s + p.amount, 0);
+  const totalCollectedToday = data.emiPayments
+    .filter((p) => isToday(p.date) && (!myCustomerIds || myCustomerIds.has(p.customerId)))
+    .reduce((s, p) => s + p.amount, 0);
   const overdueCount = items.filter((i) => i.overdue).length;
 
   return (
