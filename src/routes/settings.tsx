@@ -99,7 +99,20 @@ function CollectorModal({ close }: { close: () => void }) {
   const [name, setName] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("collect123");
+  const [photo, setPhoto] = useState<string | undefined>();
   const [err, setErr] = useState("");
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const onPhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    try {
+      const dataUrl = await compressImage(f, 400, 0.7);
+      setPhoto(dataUrl);
+    } catch {
+      setErr("Could not load photo");
+    }
+  };
 
   const save = () => {
     setErr("");
@@ -107,7 +120,7 @@ function CollectorModal({ close }: { close: () => void }) {
     if (!name.trim() || !user || !password.trim()) return setErr("Name, username and password required");
     if (user === "owner" || data.collectorAccounts.some((c) => c.username === user)) return setErr("Username already exists");
     db.update((d) => {
-      d.collectorAccounts.push({ username: user, password: password.trim(), name: name.trim(), createdAt: Date.now() });
+      d.collectorAccounts.push({ username: user, password: password.trim(), name: name.trim(), photo, createdAt: Date.now() });
     });
     close();
   };
@@ -120,6 +133,17 @@ function CollectorModal({ close }: { close: () => void }) {
           <button onClick={close} className="size-8 rounded-full bg-muted grid place-items-center"><X className="size-4" /></button>
         </div>
         <div className="space-y-3">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              className="size-16 rounded-full bg-muted grid place-items-center overflow-hidden border border-border active:scale-95 shrink-0"
+            >
+              {photo ? <img src={photo} alt="collector" className="size-full object-cover" /> : <Camera className="size-5 text-muted-foreground" />}
+            </button>
+            <div className="text-xs text-muted-foreground">Tap to add collector photo (optional)</div>
+            <input ref={fileRef} type="file" accept="image/*" capture="environment" onChange={onPhoto} className="hidden" />
+          </div>
           <Input label="Collector Name" value={name} onChange={setName} />
           <Input label="Username" value={username} onChange={setUsername} />
           <Input label="Password" value={password} onChange={setPassword} />
