@@ -39,20 +39,25 @@ function Settings() {
             {data.collectorAccounts.map((collector) => {
               const assigned = data.customers.filter((c) => c.collectorUsername === collector.username);
               return (
-                <div key={collector.username} className="px-4 py-3 text-sm">
-                  <div className="flex justify-between gap-2">
-                    <div>
-                      <p className="font-semibold">{collector.name}</p>
-                      <p className="text-[11px] text-muted-foreground">{collector.username} · {assigned.length} customers</p>
+                <Link
+                  key={collector.username}
+                  to="/collectors/$username"
+                  params={{ username: collector.username }}
+                  className="flex items-center gap-3 px-4 py-3 text-sm active:bg-muted"
+                >
+                  {collector.photo ? (
+                    <img src={collector.photo} alt={collector.name} className="size-10 rounded-full object-cover" />
+                  ) : (
+                    <div className="size-10 rounded-full bg-primary/10 text-primary grid place-items-center font-semibold">
+                      {collector.name.charAt(0)}
                     </div>
-                    <span className="text-[11px] text-primary font-semibold">Collector</span>
-                  </div>
-                  {assigned.length > 0 && (
-                    <p className="mt-1 text-[11px] text-muted-foreground line-clamp-2">
-                      {assigned.map((c) => c.name).join(", ")}
-                    </p>
                   )}
-                </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold truncate">{collector.name}</p>
+                    <p className="text-[11px] text-muted-foreground truncate">{collector.username} · {assigned.length} customers</p>
+                  </div>
+                  <ChevronRight className="size-4 text-muted-foreground" />
+                </Link>
               );
             })}
           </Group>
