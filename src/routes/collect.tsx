@@ -19,7 +19,10 @@ function Collect() {
   const today = new Date();
   const isToday = (ts: number) => new Date(ts).toDateString() === today.toDateString();
 
-  const active = data.loans.filter((l) => l.status === "approved");
+  const myCustomerIds = session?.role === "collector"
+    ? new Set(data.customers.filter((c) => c.collectorUsername === session.username).map((c) => c.id))
+    : null;
+  const active = data.loans.filter((l) => l.status === "approved" && (!myCustomerIds || myCustomerIds.has(l.customerId)));
   const items = active
     .map((loan) => {
       const cust = data.customers.find((c) => c.id === loan.customerId);
@@ -55,7 +58,9 @@ function Collect() {
     setTimeout(() => setToast(null), 2500);
   };
 
-  const totalCollectedToday = data.emiPayments.filter((p) => isToday(p.date)).reduce((s, p) => s + p.amount, 0);
+  const totalCollectedToday = data.emiPayments
+    .filter((p) => isToday(p.date) && (!myCustomerIds || myCustomerIds.has(p.customerId)))
+    .reduce((s, p) => s + p.amount, 0);
   const overdueCount = items.filter((i) => i.overdue).length;
 
   return (

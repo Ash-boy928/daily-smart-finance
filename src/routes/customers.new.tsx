@@ -26,7 +26,9 @@ function AddCustomer() {
   const [profit, setProfit] = useState("2000");
   const [duration, setDuration] = useState("120");
   const [emiType, setEmiType] = useState<EmiType>("daily");
-  const [collectorUsername, setCollectorUsername] = useState(data.collectorAccounts[0]?.username ?? "collector");
+  const [collectorUsername, setCollectorUsername] = useState(
+    session?.role === "collector" ? session.username : (data.collectorAccounts[0]?.username ?? "collector")
+  );
 
   const onFile = async (f: File | null) => {
     if (!f) return;
