@@ -67,7 +67,7 @@ function Dashboard() {
           <Action to="/customers/new" icon={<PlusCircle className="size-5" />} label="Add" />
           <Action to="/customers" icon={<Users className="size-5" />} label="List" />
           <Action to="/collect" icon={<IndianRupee className="size-5" />} label="Collect" />
-          {isOwner && <Action to="/loans" icon={<ClipboardCheck className="size-5" />} label="Loans" badge={pendingLoans} />}
+          
           <Action to="/savings" icon={<PiggyBank className="size-5" />} label="Savings" />
           {isOwner && <Action to="/profit" icon={<TrendingUp className="size-5" />} label="Profit" />}
           {isOwner && <Action to="/expenses" icon={<Receipt className="size-5" />} label="Expense" />}
