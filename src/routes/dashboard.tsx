@@ -54,7 +54,7 @@ function Dashboard() {
       </div>
 
       <div className="px-4 mt-4 grid grid-cols-2 gap-3">
-        <Stat icon={<Users className="size-4" />} label="Customers" value={String(data.customers.length)} />
+        <Stat icon={<Users className="size-4" />} label="Customers" value={String(customers.length)} />
         <Stat icon={<Wallet className="size-4" />} label="Active Loans" value={String(activeLoans.length)} />
         {isOwner && (
           <>
