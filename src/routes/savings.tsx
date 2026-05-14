@@ -229,7 +229,7 @@ function ModalSheet({ modal, close, isOwner, collectorUsername }: { modal: Exclu
       if (!name.trim() || !phone.trim()) return;
       db.update((d) => {
         const id = uid();
-        d.customers.unshift({ id, name: name.trim(), phone: phone.trim(), address: "", createdAt: Date.now() });
+        d.customers.unshift({ id, name: name.trim(), phone: phone.trim(), address: "", collectorUsername, createdAt: Date.now() });
         d.savingAccounts.push({
           id: uid(),
           customerId: id,
