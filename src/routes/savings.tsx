@@ -172,10 +172,10 @@ function Savings() {
 
         {tab === "history" && (
           <div className="mt-3 bg-card border border-border rounded-2xl divide-y divide-border">
-            {data.savings.length === 0 && (
+            {scopedSavings.length === 0 && (
               <p className="text-center text-sm text-muted-foreground p-6">No savings yet</p>
             )}
-            {data.savings
+            {scopedSavings
               .slice()
               .sort((a, b) => b.date - a.date)
               .map((s) => {
@@ -199,12 +199,12 @@ function Savings() {
         )}
       </div>
 
-      {modal && <ModalSheet modal={modal} close={() => setModal(null)} isOwner={isOwner} />}
+      {modal && <ModalSheet modal={modal} close={() => setModal(null)} isOwner={isOwner} collectorUsername={isCollector ? session!.username : undefined} />}
     </AppShell>
   );
 }
 
-function ModalSheet({ modal, close, isOwner }: { modal: Exclude<Modal, null>; close: () => void; isOwner: boolean }) {
+function ModalSheet({ modal, close, isOwner, collectorUsername }: { modal: Exclude<Modal, null>; close: () => void; isOwner: boolean; collectorUsername?: string }) {
   const data = useDB();
   const customer =
     modal.kind !== "addCustomer" ? data.customers.find((c) => c.id === modal.customerId) : undefined;
