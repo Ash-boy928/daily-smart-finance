@@ -1,7 +1,7 @@
 import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { useState } from "react";
 import { AppShell } from "@/components/AppShell";
-import { useDB, inr } from "@/lib/store";
+import { useDB, useSession, inr } from "@/lib/store";
 import { Plus, Search, Phone } from "lucide-react";
 
 export const Route = createFileRoute("/customers")({
@@ -11,9 +11,13 @@ export const Route = createFileRoute("/customers")({
 
 function Customers() {
   const db = useDB();
+  const session = useSession();
   const path = useRouterState({ select: (s) => s.location.pathname });
   const [q, setQ] = useState("");
-  const filtered = db.customers.filter(
+  const scoped = session?.role === "collector"
+    ? db.customers.filter((c) => c.collectorUsername === session.username)
+    : db.customers;
+  const filtered = scoped.filter(
     (c) => c.name.toLowerCase().includes(q.toLowerCase()) || c.phone.includes(q),
   );
 

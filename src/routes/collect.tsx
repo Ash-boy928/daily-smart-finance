@@ -19,7 +19,10 @@ function Collect() {
   const today = new Date();
   const isToday = (ts: number) => new Date(ts).toDateString() === today.toDateString();
 
-  const active = data.loans.filter((l) => l.status === "approved");
+  const myCustomerIds = session?.role === "collector"
+    ? new Set(data.customers.filter((c) => c.collectorUsername === session.username).map((c) => c.id))
+    : null;
+  const active = data.loans.filter((l) => l.status === "approved" && (!myCustomerIds || myCustomerIds.has(l.customerId)));
   const items = active
     .map((loan) => {
       const cust = data.customers.find((c) => c.id === loan.customerId);
