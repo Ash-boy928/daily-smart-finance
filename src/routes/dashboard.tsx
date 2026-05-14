@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { useDB, useSession, loanProgress, inr, isLoanOverdue, emiAmountOf } from "@/lib/store";
 import { Users, Wallet, TrendingUp, AlertCircle, PlusCircle, IndianRupee, Receipt, PiggyBank, FileBarChart, ClipboardCheck } from "lucide-react";
@@ -11,24 +12,33 @@ export const Route = createFileRoute("/dashboard")({
 function Dashboard() {
   const session = useSession();
   const data = useDB();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   const today = new Date();
   const isToday = (ts: number) => new Date(ts).toDateString() === today.toDateString();
 
-  const activeLoans = data.loans.filter((l) => l.status === "approved");
-  const issuedLoans = data.loans.filter((l) => l.status === "approved" || l.status === "completed");
-  const totalReceivable = activeLoans.reduce((s, l) => s + loanProgress(l, data.emiPayments).remaining, 0);
-  const totalCollected = data.emiPayments.reduce((s, p) => s + p.amount, 0);
+  const isCollector = mounted && session?.role === "collector";
+  const customers = isCollector
+    ? data.customers.filter((c) => c.collectorUsername === session!.username)
+    : data.customers;
+  const customerIds = new Set(customers.map((c) => c.id));
+  const scopedLoans = isCollector ? data.loans.filter((l) => customerIds.has(l.customerId)) : data.loans;
+  const scopedPayments = isCollector ? data.emiPayments.filter((p) => customerIds.has(p.customerId)) : data.emiPayments;
+
+  const activeLoans = scopedLoans.filter((l) => l.status === "approved");
+  const issuedLoans = scopedLoans.filter((l) => l.status === "approved" || l.status === "completed");
+  const totalReceivable = activeLoans.reduce((s, l) => s + loanProgress(l, scopedPayments).remaining, 0);
   const totalExpenses = data.expenses.reduce((s, e) => s + e.amount, 0);
-  const realizedProfit = issuedLoans.reduce((s, l) => s + loanProgress(l, data.emiPayments).realizedProfit, 0);
+  const realizedProfit = issuedLoans.reduce((s, l) => s + loanProgress(l, scopedPayments).realizedProfit, 0);
   const netProfit = realizedProfit - totalExpenses;
-  const todayCollected = data.emiPayments.filter((p) => isToday(p.date)).reduce((s, p) => s + p.amount, 0);
+  const todayCollected = scopedPayments.filter((p) => isToday(p.date)).reduce((s, p) => s + p.amount, 0);
   const expectedToday = activeLoans.reduce((s, l) => s + emiAmountOf(l), 0);
   const pendingToday = Math.max(0, expectedToday - todayCollected);
-  
-  const overdueCount = activeLoans.filter((l) => isLoanOverdue(l, data.emiPayments)).length;
 
-  const isOwner = session?.role === "owner";
+  const overdueCount = activeLoans.filter((l) => isLoanOverdue(l, scopedPayments)).length;
+
+  const isOwner = mounted && session?.role === "owner";
 
   return (
     <AppShell title="Dashboard">
