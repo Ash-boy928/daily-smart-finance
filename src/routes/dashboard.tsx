@@ -34,7 +34,7 @@ function Dashboard() {
     <AppShell title="Dashboard">
       <div className="px-4 pt-4 -mt-2 animate-fade">
         <div className="bg-gradient-card text-primary-foreground rounded-2xl p-5 shadow-card">
-          <p className="text-xs opacity-80">Today's Collection</p>
+          <p className="text-xs opacity-80">Today's Loan Collection</p>
           <p className="text-3xl font-bold mt-1">{inr(todayCollected)}</p>
           <div className="mt-3 flex items-center justify-between text-xs">
             <span className="opacity-80">Expected: {inr(expectedToday)}</span>
