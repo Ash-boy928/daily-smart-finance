@@ -25,6 +25,7 @@ export interface CollectorAccount {
   username: string;
   password: string;
   name: string;
+  photo?: string;
   createdAt: number;
 }
 
