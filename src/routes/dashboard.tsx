@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { useDB, useSession, loanProgress, inr, isLoanOverdue, emiAmountOf } from "@/lib/store";
-import { Users, Wallet, TrendingUp, AlertCircle, PlusCircle, IndianRupee, Receipt, PiggyBank, ClipboardCheck, FileBarChart } from "lucide-react";
+import { Users, Wallet, TrendingUp, AlertCircle, PlusCircle, IndianRupee, Receipt, PiggyBank, FileBarChart, ClipboardCheck } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — Smart Finance" }] }),
