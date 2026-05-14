@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { useDB, useSession, loanProgress, inr, isLoanOverdue, emiAmountOf } from "@/lib/store";
-import { Users, Wallet, TrendingUp, AlertCircle, PlusCircle, IndianRupee, Receipt, PiggyBank, ClipboardCheck, FileBarChart } from "lucide-react";
+import { Users, Wallet, TrendingUp, AlertCircle, PlusCircle, IndianRupee, Receipt, PiggyBank, FileBarChart, ClipboardCheck } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — Smart Finance" }] }),
@@ -25,7 +25,7 @@ function Dashboard() {
   const todayCollected = data.emiPayments.filter((p) => isToday(p.date)).reduce((s, p) => s + p.amount, 0);
   const expectedToday = activeLoans.reduce((s, l) => s + emiAmountOf(l), 0);
   const pendingToday = Math.max(0, expectedToday - todayCollected);
-  const pendingLoans = data.loans.filter((l) => l.status === "pending").length;
+  
   const overdueCount = activeLoans.filter((l) => isLoanOverdue(l, data.emiPayments)).length;
 
   const isOwner = session?.role === "owner";
@@ -34,7 +34,7 @@ function Dashboard() {
     <AppShell title="Dashboard">
       <div className="px-4 pt-4 -mt-2 animate-fade">
         <div className="bg-gradient-card text-primary-foreground rounded-2xl p-5 shadow-card">
-          <p className="text-xs opacity-80">Today's Collection</p>
+          <p className="text-xs opacity-80">Today's Loan Collection</p>
           <p className="text-3xl font-bold mt-1">{inr(todayCollected)}</p>
           <div className="mt-3 flex items-center justify-between text-xs">
             <span className="opacity-80">Expected: {inr(expectedToday)}</span>
@@ -67,7 +67,7 @@ function Dashboard() {
           <Action to="/customers/new" icon={<PlusCircle className="size-5" />} label="Add" />
           <Action to="/customers" icon={<Users className="size-5" />} label="List" />
           <Action to="/collect" icon={<IndianRupee className="size-5" />} label="Collect" />
-          {isOwner && <Action to="/loans" icon={<ClipboardCheck className="size-5" />} label="Approve" badge={pendingLoans} />}
+          
           <Action to="/savings" icon={<PiggyBank className="size-5" />} label="Savings" />
           {isOwner && <Action to="/profit" icon={<TrendingUp className="size-5" />} label="Profit" />}
           {isOwner && <Action to="/expenses" icon={<Receipt className="size-5" />} label="Expense" />}
