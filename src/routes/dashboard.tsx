@@ -25,7 +25,7 @@ function Dashboard() {
   const todayCollected = data.emiPayments.filter((p) => isToday(p.date)).reduce((s, p) => s + p.amount, 0);
   const expectedToday = activeLoans.reduce((s, l) => s + emiAmountOf(l), 0);
   const pendingToday = Math.max(0, expectedToday - todayCollected);
-  const pendingLoans = data.loans.filter((l) => l.status === "pending").length;
+  
   const overdueCount = activeLoans.filter((l) => isLoanOverdue(l, data.emiPayments)).length;
 
   const isOwner = session?.role === "owner";
