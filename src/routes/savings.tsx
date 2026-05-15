@@ -1,8 +1,8 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { AppShell } from "@/components/AppShell";
-import { useDB, useSession, db, uid, inr, MIN_LOANABLE, savingsBalance, savingsInterestEarned, type SavingAccount } from "@/lib/store";
-import { PiggyBank, Sparkles, X, UserPlus, ArrowUpRight, ArrowDownLeft, Settings2, Search, Bell } from "lucide-react";
+import { useDB, useSession, db, uid, inr, MIN_LOANABLE, savingsBalance, savingsInterestEarned, shortSavingId, type SavingAccount } from "@/lib/store";
+import { PiggyBank, Sparkles, X, UserPlus, ArrowUpRight, ArrowDownLeft, Settings2, Search, Bell, Receipt as ReceiptIcon } from "lucide-react";
 
 export const Route = createFileRoute("/savings")({
   head: () => ({ meta: [{ title: "Savings — Smart Finance" }] }),
