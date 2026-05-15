@@ -302,9 +302,10 @@ function ModalSheet({ modal, close, isOwner, collectorUsername }: { modal: Exclu
     if (!a) return;
     if (modal.kind === "withdraw" && a > balance) return;
     const ts = new Date(date).getTime() || Date.now();
+    const newId = uid();
     db.update((d) => {
       d.savings.unshift({
-        id: uid(),
+        id: newId,
         customerId: modal.customerId,
         amount: a,
         type: modal.kind === "withdraw" ? "withdrawal" : "deposit",
@@ -316,6 +317,9 @@ function ModalSheet({ modal, close, isOwner, collectorUsername }: { modal: Exclu
       }
     });
     close();
+    if (modal.kind === "withdraw") {
+      setTimeout(() => navigate({ to: "/receipt/saving/$savingId", params: { savingId: newId } }), 200);
+    }
   };
 
   const titles: Record<typeof modal.kind, string> = {
