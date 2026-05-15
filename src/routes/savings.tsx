@@ -242,6 +242,7 @@ function Savings() {
 
 function ModalSheet({ modal, close, isOwner, collectorUsername }: { modal: Exclude<Modal, null>; close: () => void; isOwner: boolean; collectorUsername?: string }) {
   const data = useDB();
+  const navigate = useNavigate();
   const customer =
     modal.kind !== "addCustomer" ? data.customers.find((c) => c.id === modal.customerId) : undefined;
   const account = customer ? data.savingAccounts.find((a) => a.customerId === customer.id) : undefined;
