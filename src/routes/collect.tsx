@@ -14,6 +14,7 @@ function Collect() {
   const session = useSession();
   const [q, setQ] = useState("");
   const [toast, setToast] = useState<string | null>(null);
+  const navigate = useNavigate();
   const [editing, setEditing] = useState<{ loanId: string; customerId: string; name: string; amount: string; note: string } | null>(null);
 
   const today = new Date();
