@@ -38,6 +38,7 @@ function Collect() {
   const submit = (loanId: string, customerId: string, amount: number, name: string, maxRemaining: number, note: string) => {
     if (!amount || amount <= 0) return;
     const final = Math.min(amount, maxRemaining);
+    let completed = false;
     db.update((dd) => {
       dd.emiPayments.unshift({
         id: uid(),
@@ -51,12 +52,18 @@ function Collect() {
       const loan = dd.loans.find((l) => l.id === loanId);
       if (loan) {
         const paid = dd.emiPayments.filter((p) => p.loanId === loanId).reduce((s, p) => s + p.amount, 0);
-        if (paid >= loan.amount + loan.profit) loan.status = "completed";
+        if (paid >= loan.amount + loan.profit) {
+          loan.status = "completed";
+          completed = true;
+        }
       }
     });
     setEditing(null);
     setToast(`✓ ${inr(final)} collected from ${name}`);
     setTimeout(() => setToast(null), 2500);
+    if (completed) {
+      setTimeout(() => navigate({ to: "/receipt/$loanId", params: { loanId } }), 600);
+    }
   };
 
   const totalCollectedToday = data.emiPayments
