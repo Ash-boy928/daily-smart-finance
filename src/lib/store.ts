@@ -339,6 +339,34 @@ function expectedDueBeforeToday(loan: Loan): number {
   return Math.min(units, installmentsOf(loan)) * emiAmountOf(loan);
 }
 
+// Short human-friendly loan id (e.g. "L-AB12CD")
+export function shortLoanId(loanId: string): string {
+  return "L-" + loanId.slice(0, 6).toUpperCase();
+}
+
+export function shortSavingId(savingId: string): string {
+  return "S-" + savingId.slice(0, 6).toUpperCase();
+}
+
+// Returns saving customers who have NOT made a deposit today (i.e. saving collection pending)
+export function savingPendingToday(
+  customers: Customer[],
+  savingAccounts: SavingAccount[],
+  savings: Saving[],
+): Customer[] {
+  const today = new Date().toDateString();
+  const accountIds = new Set(savingAccounts.map((a) => a.customerId));
+  const customersWithDepositHistory = new Set(savings.filter((s) => s.type !== "withdrawal").map((s) => s.customerId));
+  return customers.filter((c) => {
+    const hasAccount = accountIds.has(c.id) || customersWithDepositHistory.has(c.id);
+    if (!hasAccount) return false;
+    const depositedToday = savings.some(
+      (s) => s.customerId === c.id && s.type !== "withdrawal" && new Date(s.date).toDateString() === today,
+    );
+    return !depositedToday;
+  });
+}
+
 // Savings helpers
 export function savingsBalance(customerId: string, all: Saving[]): number {
   return all
