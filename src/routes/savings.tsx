@@ -24,6 +24,8 @@ function Savings() {
   const [tab, setTab] = useState<"all" | "ready" | "history">("all");
   const [modal, setModal] = useState<Modal>(null);
   const [q, setQ] = useState("");
+  const [histName, setHistName] = useState("");
+  const [histDate, setHistDate] = useState("");
 
   const scopedCustomers = isCollector
     ? data.customers.filter((c) => c.collectorUsername === session!.username)
