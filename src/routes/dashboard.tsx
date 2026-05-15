@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/AppShell";
-import { useDB, useSession, loanProgress, inr, isLoanOverdue, emiAmountOf } from "@/lib/store";
+import { useDB, useSession, loanProgress, inr, isLoanOverdue, emiAmountOf, savingPendingToday } from "@/lib/store";
 import { Users, Wallet, TrendingUp, AlertCircle, PlusCircle, IndianRupee, Receipt, PiggyBank, FileBarChart, ClipboardCheck } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard")({
@@ -25,6 +25,8 @@ function Dashboard() {
   const customerIds = new Set(customers.map((c) => c.id));
   const scopedLoans = isCollector ? data.loans.filter((l) => customerIds.has(l.customerId)) : data.loans;
   const scopedPayments = isCollector ? data.emiPayments.filter((p) => customerIds.has(p.customerId)) : data.emiPayments;
+  const scopedSavings = isCollector ? data.savings.filter((s) => customerIds.has(s.customerId)) : data.savings;
+  const scopedSavingAccounts = isCollector ? data.savingAccounts.filter((a) => customerIds.has(a.customerId)) : data.savingAccounts;
 
   const activeLoans = scopedLoans.filter((l) => l.status === "approved");
   const issuedLoans = scopedLoans.filter((l) => l.status === "approved" || l.status === "completed");
@@ -33,8 +35,26 @@ function Dashboard() {
   const realizedProfit = issuedLoans.reduce((s, l) => s + loanProgress(l, scopedPayments).realizedProfit, 0);
   const netProfit = realizedProfit - totalExpenses;
   const todayCollected = scopedPayments.filter((p) => isToday(p.date)).reduce((s, p) => s + p.amount, 0);
-  const expectedToday = activeLoans.reduce((s, l) => s + emiAmountOf(l), 0);
-  const pendingToday = Math.max(0, expectedToday - todayCollected);
+
+  // Today's EMI pending = sum of remaining EMI per active loan (auto-zeroes when paid)
+  const emiPendingList = activeLoans
+    .map((loan) => {
+      const cust = data.customers.find((c) => c.id === loan.customerId);
+      const paidToday = scopedPayments
+        .filter((p) => p.loanId === loan.id && isToday(p.date))
+        .reduce((s, p) => s + p.amount, 0);
+      const emi = emiAmountOf(loan);
+      const due = Math.max(0, emi - paidToday);
+      const { percent } = loanProgress(loan, scopedPayments);
+      const overdue = isLoanOverdue(loan, scopedPayments);
+      return { loan, cust, paidToday, due, emi, percent, overdue };
+    })
+    .filter((x) => x.due > 0);
+  const emiPendingTotal = emiPendingList.reduce((s, x) => s + x.due, 0);
+
+  // Today's saving pending = customers (with saving account) who haven't deposited today
+  const savingPendingCustomers = savingPendingToday(customers, scopedSavingAccounts, scopedSavings);
+  const savingPendingCount = savingPendingCustomers.length;
 
   const overdueCount = activeLoans.filter((l) => isLoanOverdue(l, scopedPayments)).length;
 
@@ -46,9 +66,15 @@ function Dashboard() {
         <div className="bg-gradient-card text-primary-foreground rounded-2xl p-5 shadow-card">
           <p className="text-xs opacity-80">Today's Loan Collection</p>
           <p className="text-3xl font-bold mt-1">{inr(todayCollected)}</p>
-          <div className="mt-3 flex items-center justify-between text-xs">
-            <span className="opacity-80">Expected: {inr(expectedToday)}</span>
-            <span className="bg-white/20 rounded-full px-2 py-0.5">Pending: {inr(pendingToday)}</span>
+          <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+            <div className="bg-white/15 rounded-lg px-2 py-1.5">
+              <p className="opacity-80">EMI Pending</p>
+              <p className="font-bold text-sm">{inr(emiPendingTotal)}</p>
+            </div>
+            <div className="bg-white/15 rounded-lg px-2 py-1.5">
+              <p className="opacity-80">Saving Pending</p>
+              <p className="font-bold text-sm">{savingPendingCount} cust.</p>
+            </div>
           </div>
         </div>
       </div>
@@ -65,7 +91,7 @@ function Dashboard() {
         )}
         {!isOwner && (
           <>
-            <Stat icon={<AlertCircle className="size-4" />} label="Pending Today" value={inr(pendingToday)} highlight />
+            <Stat icon={<AlertCircle className="size-4" />} label="EMI Pending" value={inr(emiPendingTotal)} highlight />
             <Stat icon={<ClipboardCheck className="size-4" />} label="Collected" value={inr(todayCollected)} />
           </>
         )}
@@ -77,7 +103,6 @@ function Dashboard() {
           <Action to="/customers/new" icon={<PlusCircle className="size-5" />} label="Add" />
           <Action to="/customers" icon={<Users className="size-5" />} label="List" />
           <Action to="/collect" icon={<IndianRupee className="size-5" />} label="Collect" />
-          
           <Action to="/savings" icon={<PiggyBank className="size-5" />} label="Savings" />
           {isOwner && <Action to="/profit" icon={<TrendingUp className="size-5" />} label="Profit" />}
           {isOwner && <Action to="/expenses" icon={<Receipt className="size-5" />} label="Expense" />}
@@ -87,46 +112,68 @@ function Dashboard() {
 
       <div className="px-4 mt-5">
         <div className="flex items-center justify-between mb-2">
-          <h2 className="text-sm font-semibold">Pending EMIs Today</h2>
+          <h2 className="text-sm font-semibold">Today's EMI Pending</h2>
           <Link to="/collect" className="text-xs text-primary font-medium">See all</Link>
         </div>
         <div className="space-y-2">
-          {activeLoans.slice(0, 5).map((loan) => {
-            const cust = data.customers.find((c) => c.id === loan.customerId);
-            const paidToday = data.emiPayments.filter((p) => p.loanId === loan.id && isToday(p.date)).reduce((s, p) => s + p.amount, 0);
-            const emi = emiAmountOf(loan);
-            const due = Math.max(0, emi - paidToday);
-            const { percent } = loanProgress(loan, data.emiPayments);
-            const overdue = isLoanOverdue(loan, data.emiPayments);
-            return (
-              <Link
-                key={loan.id}
-                to="/customers/$id"
-                params={{ id: loan.customerId }}
-                className={`block rounded-2xl border p-3 shadow-soft active:scale-[0.99] animate-pop ${overdue ? "border-destructive/40 bg-destructive/5" : "bg-card border-border"}`}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="min-w-0">
-                    <p className="font-semibold text-sm truncate flex items-center gap-1">
-                      {cust?.name ?? "—"}
-                      {overdue && <span className="text-[9px] bg-destructive text-destructive-foreground rounded-full px-1.5 font-bold">OVERDUE</span>}
-                    </p>
-                    <p className="text-xs text-muted-foreground">{inr(loan.amount)} · {loan.durationDays}d</p>
-                  </div>
-                  <div className="text-right">
-                    <p className={`text-sm font-semibold ${due === 0 ? "text-success" : "text-foreground"}`}>{due === 0 ? "Paid ✓" : inr(due)}</p>
-                    <p className="text-[10px] text-muted-foreground">EMI {inr(emi)}</p>
-                  </div>
+          {emiPendingList.slice(0, 5).map(({ loan, cust, due, emi, percent, overdue }) => (
+            <Link
+              key={loan.id}
+              to="/customers/$id"
+              params={{ id: loan.customerId }}
+              className={`block rounded-2xl border p-3 shadow-soft active:scale-[0.99] animate-pop ${overdue ? "border-destructive/40 bg-destructive/5" : "bg-card border-border"}`}
+            >
+              <div className="flex items-center justify-between">
+                <div className="min-w-0">
+                  <p className="font-semibold text-sm truncate flex items-center gap-1">
+                    {cust?.name ?? "—"}
+                    {overdue && <span className="text-[9px] bg-destructive text-destructive-foreground rounded-full px-1.5 font-bold">OVERDUE</span>}
+                  </p>
+                  <p className="text-xs text-muted-foreground">{inr(loan.amount)} · {loan.durationDays}d</p>
                 </div>
-                <div className="mt-2 h-1.5 bg-muted rounded-full overflow-hidden">
-                  <div className="h-full bg-primary" style={{ width: `${percent}%` }} />
+                <div className="text-right">
+                  <p className="text-sm font-semibold text-foreground">{inr(due)}</p>
+                  <p className="text-[10px] text-muted-foreground">EMI {inr(emi)}</p>
                 </div>
-              </Link>
-            );
-          })}
-          {activeLoans.length === 0 && (
-            <div className="text-center text-sm text-muted-foreground py-8 bg-card rounded-2xl border border-border">
-              No active loans yet
+              </div>
+              <div className="mt-2 h-1.5 bg-muted rounded-full overflow-hidden">
+                <div className="h-full bg-primary" style={{ width: `${percent}%` }} />
+              </div>
+            </Link>
+          ))}
+          {emiPendingList.length === 0 && (
+            <div className="text-center text-sm text-muted-foreground py-6 bg-success/5 rounded-2xl border border-success/20">
+              ✓ All EMIs collected today
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="px-4 mt-5 mb-4">
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-sm font-semibold">Today's Saving Pending</h2>
+          <Link to="/savings" className="text-xs text-primary font-medium">See all</Link>
+        </div>
+        <div className="space-y-2">
+          {savingPendingCustomers.slice(0, 5).map((c) => (
+            <Link
+              key={c.id}
+              to="/customers/$id"
+              params={{ id: c.id }}
+              className="block bg-card border border-border rounded-2xl p-3 shadow-soft active:scale-[0.99] animate-pop"
+            >
+              <div className="flex items-center justify-between">
+                <div className="min-w-0">
+                  <p className="font-semibold text-sm truncate">{c.name}</p>
+                  <p className="text-xs text-muted-foreground">{c.phone}</p>
+                </div>
+                <span className="text-[10px] font-semibold bg-warning/30 text-warning-foreground rounded-full px-2 py-0.5">PENDING</span>
+              </div>
+            </Link>
+          ))}
+          {savingPendingCustomers.length === 0 && (
+            <div className="text-center text-sm text-muted-foreground py-6 bg-success/5 rounded-2xl border border-success/20">
+              ✓ All savings collected today
             </div>
           )}
         </div>

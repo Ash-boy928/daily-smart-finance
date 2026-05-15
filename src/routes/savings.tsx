@@ -1,8 +1,8 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { AppShell } from "@/components/AppShell";
-import { useDB, useSession, db, uid, inr, MIN_LOANABLE, savingsBalance, savingsInterestEarned, type SavingAccount } from "@/lib/store";
-import { PiggyBank, Sparkles, X, UserPlus, ArrowUpRight, ArrowDownLeft, Settings2, Search, Bell } from "lucide-react";
+import { useDB, useSession, db, uid, inr, MIN_LOANABLE, savingsBalance, savingsInterestEarned, shortSavingId, type SavingAccount } from "@/lib/store";
+import { PiggyBank, Sparkles, X, UserPlus, ArrowUpRight, ArrowDownLeft, Settings2, Search, Bell, Receipt as ReceiptIcon } from "lucide-react";
 
 export const Route = createFileRoute("/savings")({
   head: () => ({ meta: [{ title: "Savings — Smart Finance" }] }),
@@ -24,6 +24,8 @@ function Savings() {
   const [tab, setTab] = useState<"all" | "ready" | "history">("all");
   const [modal, setModal] = useState<Modal>(null);
   const [q, setQ] = useState("");
+  const [histName, setHistName] = useState("");
+  const [histDate, setHistDate] = useState("");
 
   const scopedCustomers = isCollector
     ? data.customers.filter((c) => c.collectorUsername === session!.username)
@@ -171,30 +173,64 @@ function Savings() {
         )}
 
         {tab === "history" && (
-          <div className="mt-3 bg-card border border-border rounded-2xl divide-y divide-border">
-            {scopedSavings.length === 0 && (
-              <p className="text-center text-sm text-muted-foreground p-6">No savings yet</p>
-            )}
-            {scopedSavings
-              .slice()
-              .sort((a, b) => b.date - a.date)
-              .map((s) => {
-                const c = data.customers.find((x) => x.id === s.customerId);
-                const isWith = s.type === "withdrawal";
-                return (
-                  <div key={s.id} className="flex justify-between items-center p-3 text-sm">
-                    <div>
-                      <p className="font-medium">{c?.name ?? "—"}</p>
-                      <p className="text-[11px] text-muted-foreground">
-                        {new Date(s.date).toLocaleDateString()} · {isWith ? "Withdraw" : "Deposit"}
-                      </p>
+          <div className="mt-3 space-y-2">
+            <div className="grid grid-cols-2 gap-2">
+              <input
+                value={histName}
+                onChange={(e) => setHistName(e.target.value)}
+                placeholder="Filter by name"
+                className="rounded-xl border border-input bg-card px-3 py-2 text-xs outline-none"
+              />
+              <input
+                type="date"
+                value={histDate}
+                onChange={(e) => setHistDate(e.target.value)}
+                className="rounded-xl border border-input bg-card px-3 py-2 text-xs outline-none"
+              />
+            </div>
+            <div className="bg-card border border-border rounded-2xl divide-y divide-border">
+              {(() => {
+                const list = scopedSavings
+                  .slice()
+                  .sort((a, b) => b.date - a.date)
+                  .filter((s) => {
+                    const c = data.customers.find((x) => x.id === s.customerId);
+                    if (histName && !(c?.name.toLowerCase().includes(histName.toLowerCase()))) return false;
+                    if (histDate && new Date(s.date).toISOString().slice(0, 10) !== histDate) return false;
+                    return true;
+                  });
+                if (list.length === 0)
+                  return <p className="text-center text-sm text-muted-foreground p-6">No matching transactions</p>;
+                return list.map((s) => {
+                  const c = data.customers.find((x) => x.id === s.customerId);
+                  const isWith = s.type === "withdrawal";
+                  return (
+                    <div key={s.id} className="flex justify-between items-center p-3 text-sm gap-2">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium truncate flex items-center gap-1">
+                          {c?.name ?? "—"}
+                          <span className="text-[9px] font-mono bg-muted text-muted-foreground rounded px-1">{shortSavingId(s.id)}</span>
+                        </p>
+                        <p className="text-[11px] text-muted-foreground">
+                          {new Date(s.date).toLocaleDateString()} · {isWith ? "Withdraw" : "Deposit"}
+                        </p>
+                      </div>
+                      <span className={`font-semibold ${isWith ? "text-destructive" : "text-success"}`}>
+                        {isWith ? "-" : "+"} {inr(s.amount)}
+                      </span>
+                      <Link
+                        to="/receipt/saving/$savingId"
+                        params={{ savingId: s.id }}
+                        className="size-7 rounded-full bg-primary/10 text-primary grid place-items-center"
+                        aria-label="Receipt"
+                      >
+                        <ReceiptIcon className="size-3.5" />
+                      </Link>
                     </div>
-                    <span className={`font-semibold ${isWith ? "text-destructive" : "text-success"}`}>
-                      {isWith ? "-" : "+"} {inr(s.amount)}
-                    </span>
-                  </div>
-                );
-              })}
+                  );
+                });
+              })()}
+            </div>
           </div>
         )}
       </div>
@@ -206,6 +242,7 @@ function Savings() {
 
 function ModalSheet({ modal, close, isOwner, collectorUsername }: { modal: Exclude<Modal, null>; close: () => void; isOwner: boolean; collectorUsername?: string }) {
   const data = useDB();
+  const navigate = useNavigate();
   const customer =
     modal.kind !== "addCustomer" ? data.customers.find((c) => c.id === modal.customerId) : undefined;
   const account = customer ? data.savingAccounts.find((a) => a.customerId === customer.id) : undefined;
@@ -265,9 +302,10 @@ function ModalSheet({ modal, close, isOwner, collectorUsername }: { modal: Exclu
     if (!a) return;
     if (modal.kind === "withdraw" && a > balance) return;
     const ts = new Date(date).getTime() || Date.now();
+    const newId = uid();
     db.update((d) => {
       d.savings.unshift({
-        id: uid(),
+        id: newId,
         customerId: modal.customerId,
         amount: a,
         type: modal.kind === "withdraw" ? "withdrawal" : "deposit",
@@ -279,6 +317,9 @@ function ModalSheet({ modal, close, isOwner, collectorUsername }: { modal: Exclu
       }
     });
     close();
+    if (modal.kind === "withdraw") {
+      setTimeout(() => navigate({ to: "/receipt/saving/$savingId", params: { savingId: newId } }), 200);
+    }
   };
 
   const titles: Record<typeof modal.kind, string> = {

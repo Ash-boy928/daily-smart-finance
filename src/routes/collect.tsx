@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { useDB, useSession, db, uid, inr, loanProgress, emiAmountOf, emiTypeOf, isLoanOverdue } from "@/lib/store";
@@ -14,6 +14,7 @@ function Collect() {
   const session = useSession();
   const [q, setQ] = useState("");
   const [toast, setToast] = useState<string | null>(null);
+  const navigate = useNavigate();
   const [editing, setEditing] = useState<{ loanId: string; customerId: string; name: string; amount: string; note: string } | null>(null);
 
   const today = new Date();
@@ -37,6 +38,7 @@ function Collect() {
   const submit = (loanId: string, customerId: string, amount: number, name: string, maxRemaining: number, note: string) => {
     if (!amount || amount <= 0) return;
     const final = Math.min(amount, maxRemaining);
+    let completed = false;
     db.update((dd) => {
       dd.emiPayments.unshift({
         id: uid(),
@@ -50,12 +52,18 @@ function Collect() {
       const loan = dd.loans.find((l) => l.id === loanId);
       if (loan) {
         const paid = dd.emiPayments.filter((p) => p.loanId === loanId).reduce((s, p) => s + p.amount, 0);
-        if (paid >= loan.amount + loan.profit) loan.status = "completed";
+        if (paid >= loan.amount + loan.profit) {
+          loan.status = "completed";
+          completed = true;
+        }
       }
     });
     setEditing(null);
     setToast(`✓ ${inr(final)} collected from ${name}`);
     setTimeout(() => setToast(null), 2500);
+    if (completed) {
+      setTimeout(() => navigate({ to: "/receipt/$loanId", params: { loanId } }), 600);
+    }
   };
 
   const totalCollectedToday = data.emiPayments
