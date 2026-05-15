@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/AppShell";
-import { useDB, useSession, loanProgress, inr, isLoanOverdue, emiAmountOf } from "@/lib/store";
+import { useDB, useSession, loanProgress, inr, isLoanOverdue, emiAmountOf, savingPendingToday } from "@/lib/store";
 import { Users, Wallet, TrendingUp, AlertCircle, PlusCircle, IndianRupee, Receipt, PiggyBank, FileBarChart, ClipboardCheck } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard")({
