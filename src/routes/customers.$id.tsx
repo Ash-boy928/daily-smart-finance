@@ -150,7 +150,10 @@ function CustomerDetail() {
               <div key={loan.id} className="bg-card border border-border rounded-2xl p-3 shadow-soft animate-pop">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-semibold text-sm">{inr(loan.amount)} <span className="text-muted-foreground font-normal">+ {inr(loan.profit)} profit</span></p>
+                    <p className="font-semibold text-sm flex items-center gap-1.5">
+                      {inr(loan.amount)} <span className="text-muted-foreground font-normal">+ {inr(loan.profit)} profit</span>
+                      <span className="text-[9px] font-mono bg-primary/10 text-primary rounded px-1.5 py-0.5">{shortLoanId(loan.id)}</span>
+                    </p>
                     <p className="text-[11px] text-muted-foreground">{loan.durationDays}d · {emiTypeOf(loan)} EMI {inr(emiAmountOf(loan))}</p>
                   </div>
                   <StatusBadge status={loan.status} />
