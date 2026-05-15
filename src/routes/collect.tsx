@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { useDB, useSession, db, uid, inr, loanProgress, emiAmountOf, emiTypeOf, isLoanOverdue } from "@/lib/store";
