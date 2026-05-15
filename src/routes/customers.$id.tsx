@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { AppShell } from "@/components/AppShell";
-import { useDB, useSession, db, uid, loanProgress, inr, calcEmi, emiAmountOf, emiTypeOf, savingsBalance, type EmiType } from "@/lib/store";
+import { useDB, useSession, db, uid, loanProgress, inr, calcEmi, emiAmountOf, emiTypeOf, savingsBalance, shortLoanId, type EmiType } from "@/lib/store";
 import { Phone, MapPin, PlusCircle, IndianRupee, PiggyBank, Receipt as ReceiptIcon } from "lucide-react";
 
 export const Route = createFileRoute("/customers/$id")({
