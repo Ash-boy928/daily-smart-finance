@@ -1,7 +1,7 @@
 import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { useState } from "react";
 import { AppShell } from "@/components/AppShell";
-import { useDB, useSession, inr } from "@/lib/store";
+import { useDB, useSession, inr, shortLoanId } from "@/lib/store";
 import { Plus, Search, Phone } from "lucide-react";
 
 export const Route = createFileRoute("/customers")({
