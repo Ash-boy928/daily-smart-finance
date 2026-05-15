@@ -59,7 +59,14 @@ function Customers() {
                 {c.name.charAt(0)}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sm truncate">{c.name}</p>
+                <p className="font-semibold text-sm truncate flex items-center gap-1.5">
+                  {c.name}
+                  {active && (
+                    <span className="text-[9px] font-mono bg-primary/10 text-primary rounded px-1.5 py-0.5">
+                      {shortLoanId(active.id)}
+                    </span>
+                  )}
+                </p>
                 <p className="text-xs text-muted-foreground flex items-center gap-1">
                   <Phone className="size-3" /> {c.phone}
                 </p>
