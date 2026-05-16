@@ -67,6 +67,9 @@ ${s.note ? "Note: " + s.note : ""}`;
             <Share2 className="size-4" /> Share
           </button>
         </div>
+        <Link to="/receipt/saving/customer/$savingId" params={{ savingId: s.id }} className="block mt-2 text-center text-xs font-semibold bg-accent rounded-xl py-2.5">
+          📄 Open Customer Copy (no interest %)
+        </Link>
         <Link to="/savings" className="block mt-3 text-center text-xs text-primary">← Back to Savings</Link>
       </div>
     </AppShell>

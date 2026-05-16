@@ -82,6 +82,9 @@ Period: ${loan.startDate ? new Date(loan.startDate).toLocaleDateString() : "—"
             <Share2 className="size-4" /> Share
           </button>
         </div>
+        <Link to="/receipt/customer/$loanId" params={{ loanId: loan.id }} className="block mt-2 text-center text-xs font-semibold bg-accent rounded-xl py-2.5">
+          📄 Open Customer Copy (no profit)
+        </Link>
         <Link to="/reports" className="block mt-3 text-center text-xs text-primary">← Back to Reports</Link>
       </div>
     </AppShell>
