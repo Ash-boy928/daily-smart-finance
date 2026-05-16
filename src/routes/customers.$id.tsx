@@ -174,9 +174,20 @@ function CustomerDetail() {
                   </button>
                 )}
                 {loan.status === "completed" && (
-                  <Link to="/receipt/$loanId" params={{ loanId: loan.id }} className="mt-3 w-full bg-card border border-border rounded-xl py-2 text-sm font-semibold flex items-center justify-center gap-1">
-                    <ReceiptIcon className="size-4" /> View Receipt
-                  </Link>
+                  session?.role === "owner" ? (
+                    <div className="mt-3 grid grid-cols-2 gap-2">
+                      <Link to="/receipt/$loanId" params={{ loanId: loan.id }} className="bg-card border border-border rounded-xl py-2 text-xs font-semibold flex items-center justify-center gap-1">
+                        <ReceiptIcon className="size-3.5" /> Admin
+                      </Link>
+                      <Link to="/receipt/customer/$loanId" params={{ loanId: loan.id }} className="bg-primary text-primary-foreground rounded-xl py-2 text-xs font-semibold flex items-center justify-center gap-1">
+                        <ReceiptIcon className="size-3.5" /> Customer
+                      </Link>
+                    </div>
+                  ) : (
+                    <Link to="/receipt/customer/$loanId" params={{ loanId: loan.id }} className="mt-3 w-full bg-card border border-border rounded-xl py-2 text-sm font-semibold flex items-center justify-center gap-1">
+                      <ReceiptIcon className="size-4" /> Customer Receipt
+                    </Link>
+                  )
                 )}
                 {loan.status === "pending" && session?.role === "owner" && (
                   <div className="mt-3 grid grid-cols-2 gap-2">
