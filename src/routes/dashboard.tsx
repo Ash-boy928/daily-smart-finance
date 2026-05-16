@@ -62,21 +62,17 @@ function Dashboard() {
 
   return (
     <AppShell title="Dashboard">
-      <div className="px-4 pt-4 -mt-2 animate-fade">
-        <div className="bg-gradient-card text-primary-foreground rounded-2xl p-5 shadow-card">
-          <p className="text-xs opacity-80">Today's Loan Collection</p>
-          <p className="text-3xl font-bold mt-1">{inr(todayCollected)}</p>
-          <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
-            <div className="bg-white/15 rounded-lg px-2 py-1.5">
-              <p className="opacity-80">EMI Pending</p>
-              <p className="font-bold text-sm">{inr(emiPendingTotal)}</p>
-            </div>
-            <div className="bg-white/15 rounded-lg px-2 py-1.5">
-              <p className="opacity-80">Saving Pending</p>
-              <p className="font-bold text-sm">{savingPendingCount} cust.</p>
-            </div>
-          </div>
-        </div>
+      <div className="px-4 pt-4 -mt-2 animate-fade grid grid-cols-2 gap-3">
+        <Link to="/collect" className="bg-gradient-card text-primary-foreground rounded-2xl p-4 shadow-card active:scale-[0.98] transition">
+          <p className="text-[11px] opacity-80">Today's Loan Collection</p>
+          <p className="text-xl font-bold mt-1">{inr(todayCollected)}</p>
+          <p className="mt-2 text-[10px] bg-white/15 rounded-md px-1.5 py-0.5 inline-block">EMI Pending {inr(emiPendingTotal)}</p>
+        </Link>
+        <Link to="/savings" className="bg-card border border-border rounded-2xl p-4 shadow-card active:scale-[0.98] transition">
+          <p className="text-[11px] text-muted-foreground">Today's Saving Collection</p>
+          <p className="text-xl font-bold mt-1 text-success">{savingPendingCount === 0 ? "✓ Done" : `${savingPendingCount} due`}</p>
+          <p className="mt-2 text-[10px] bg-muted rounded-md px-1.5 py-0.5 inline-block text-muted-foreground">Pending customers</p>
+        </Link>
       </div>
 
       <div className="px-4 mt-4 grid grid-cols-2 gap-3">

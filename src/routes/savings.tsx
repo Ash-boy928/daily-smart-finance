@@ -218,14 +218,25 @@ function Savings() {
                       <span className={`font-semibold ${isWith ? "text-destructive" : "text-success"}`}>
                         {isWith ? "-" : "+"} {inr(s.amount)}
                       </span>
-                      <Link
-                        to="/receipt/saving/$savingId"
-                        params={{ savingId: s.id }}
-                        className="size-7 rounded-full bg-primary/10 text-primary grid place-items-center"
-                        aria-label="Receipt"
-                      >
-                        <ReceiptIcon className="size-3.5" />
-                      </Link>
+                      {isOwner ? (
+                        <Link
+                          to="/receipt/saving/$savingId"
+                          params={{ savingId: s.id }}
+                          className="size-7 rounded-full bg-primary/10 text-primary grid place-items-center"
+                          aria-label="Receipt"
+                        >
+                          <ReceiptIcon className="size-3.5" />
+                        </Link>
+                      ) : (
+                        <Link
+                          to="/receipt/saving/customer/$savingId"
+                          params={{ savingId: s.id }}
+                          className="size-7 rounded-full bg-primary/10 text-primary grid place-items-center"
+                          aria-label="Receipt"
+                        >
+                          <ReceiptIcon className="size-3.5" />
+                        </Link>
+                      )}
                     </div>
                   );
                 });
@@ -318,7 +329,10 @@ function ModalSheet({ modal, close, isOwner, collectorUsername }: { modal: Exclu
     });
     close();
     if (modal.kind === "withdraw") {
-      setTimeout(() => navigate({ to: "/receipt/saving/$savingId", params: { savingId: newId } }), 200);
+      setTimeout(() => {
+        if (isOwner) navigate({ to: "/receipt/saving/$savingId", params: { savingId: newId } });
+        else navigate({ to: "/receipt/saving/customer/$savingId", params: { savingId: newId } });
+      }, 200);
     }
   };
 

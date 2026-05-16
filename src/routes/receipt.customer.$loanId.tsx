@@ -1,15 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
-import { useDB, inr, loanProgress, emiAmountOf, emiTypeOf } from "@/lib/store";
+import { useDB, inr, loanProgress, emiAmountOf, emiTypeOf, shortLoanId } from "@/lib/store";
 import { Printer, Share2 } from "lucide-react";
 
-export const Route = createFileRoute("/receipt/$loanId")({
-  head: () => ({ meta: [{ title: "Loan Receipt — Smart Finance" }] }),
-  component: Receipt,
+export const Route = createFileRoute("/receipt/customer/$loanId")({
+  head: () => ({ meta: [{ title: "Customer Receipt — Smart Finance" }] }),
+  component: CustomerReceipt,
   notFoundComponent: () => <div className="p-6">Loan not found</div>,
 });
 
-function Receipt() {
+function CustomerReceipt() {
   const { loanId } = Route.useParams();
   const data = useDB();
   const loan = data.loans.find((l) => l.id === loanId);
@@ -17,46 +17,46 @@ function Receipt() {
   const customer = data.customers.find((c) => c.id === loan.customerId);
   const pr = loanProgress(loan, data.emiPayments);
   const payments = data.emiPayments.filter((p) => p.loanId === loan.id).sort((a, b) => a.date - b.date);
+  const closed = loan.status === "completed";
 
   const share = async () => {
-    const text = `Loan Closure Receipt
+    const text = `Smart Finance — Loan ${closed ? "Closure" : "Statement"}
 Customer: ${customer?.name}
-Loan: ${inr(loan.amount)} + Profit ${inr(loan.profit)}
+Loan ID: ${shortLoanId(loan.id)}
+Loan amount: ${inr(loan.amount)}
+Total payable: ${inr(loan.amount + loan.profit)}
+EMI: ${inr(emiAmountOf(loan))} (${emiTypeOf(loan)})
 Total paid: ${inr(pr.paid)}
-Status: ${loan.status.toUpperCase()}
-Period: ${loan.startDate ? new Date(loan.startDate).toLocaleDateString() : "—"} to ${new Date().toLocaleDateString()}
-— Smart Finance`;
-    if (typeof navigator !== "undefined" && (navigator as Navigator & { share?: (d: ShareData) => Promise<void> }).share) {
-      try {
-        await (navigator as Navigator & { share: (d: ShareData) => Promise<void> }).share({ title: "Loan Receipt", text });
-      } catch {/* cancelled */}
-    } else if (typeof navigator !== "undefined" && navigator.clipboard) {
-      navigator.clipboard.writeText(text);
-      alert("Receipt copied to clipboard");
-    }
+Balance: ${inr(pr.remaining)}
+Status: ${closed ? "CLOSED — No dues" : "Active"}
+Date: ${new Date().toLocaleDateString()}
+Thank you 🙏`;
+    const nav = navigator as Navigator & { share?: (d: ShareData) => Promise<void> };
+    if (nav.share) { try { await nav.share({ title: "Receipt", text }); } catch { /* cancelled */ } }
+    else if (navigator.clipboard) { navigator.clipboard.writeText(text); alert("Receipt copied"); }
   };
 
   return (
-    <AppShell title="Loan Receipt" showBack>
+    <AppShell title="Customer Receipt" showBack>
       <div className="px-4 pt-4 animate-fade">
-        <div id="receipt" className="bg-card border border-border rounded-2xl p-5 shadow-card">
+        <div className="bg-card border border-border rounded-2xl p-5 shadow-card">
           <div className="text-center pb-3 border-b border-dashed border-border">
             <p className="font-bold text-lg">Smart Finance</p>
-            <p className="text-[11px] text-muted-foreground">Loan Closure Receipt</p>
+            <p className="text-[11px] text-muted-foreground">{closed ? "Loan Closure Receipt" : "Loan Statement"} (Customer Copy)</p>
           </div>
           <dl className="mt-3 text-sm space-y-1.5">
             <Row label="Customer" v={customer?.name ?? "—"} />
             <Row label="Phone" v={customer?.phone ?? "—"} />
-            <Row label="Loan ID" v={loan.id} />
+            <Row label="Loan ID" v={shortLoanId(loan.id)} />
             <Row label="Loan amount" v={inr(loan.amount)} />
-            <Row label="Profit" v={inr(loan.profit)} />
             <Row label="Total payable" v={inr(loan.amount + loan.profit)} />
             <Row label="EMI" v={`${inr(emiAmountOf(loan))} (${emiTypeOf(loan)})`} />
             <Row label="Duration" v={`${loan.durationDays} days`} />
             <Row label="Started" v={loan.startDate ? new Date(loan.startDate).toLocaleDateString() : "—"} />
-            <Row label="Closed" v={new Date().toLocaleDateString()} />
-            <Row label="Total collected" v={inr(pr.paid)} bold />
-            <Row label="Profit earned" v={inr(pr.realizedProfit)} bold />
+            <Row label="Date" v={new Date().toLocaleDateString()} />
+            <Row label="Total paid" v={inr(pr.paid)} bold />
+            <Row label="Balance" v={inr(pr.remaining)} bold />
+            {closed && <Row label="Status" v="CLOSED — No dues" bold />}
           </dl>
 
           <div className="mt-4 pt-3 border-t border-dashed border-border">
@@ -68,10 +68,11 @@ Period: ${loan.startDate ? new Date(loan.startDate).toLocaleDateString() : "—"
                   <span className="font-semibold">{inr(p.amount)}</span>
                 </div>
               ))}
+              {payments.length === 0 && <p className="text-muted-foreground">No payments yet</p>}
             </div>
           </div>
 
-          <p className="mt-4 text-center text-[10px] text-muted-foreground">Thank you for your business 🌱</p>
+          <p className="mt-4 text-center text-[10px] text-muted-foreground">Thank you 🙏 — Customer Copy</p>
         </div>
 
         <div className="mt-4 grid grid-cols-2 gap-2">
@@ -82,10 +83,7 @@ Period: ${loan.startDate ? new Date(loan.startDate).toLocaleDateString() : "—"
             <Share2 className="size-4" /> Share
           </button>
         </div>
-        <Link to="/receipt/customer/$loanId" params={{ loanId: loan.id }} className="block mt-2 text-center text-xs font-semibold bg-accent rounded-xl py-2.5">
-          📄 Open Customer Copy (no profit)
-        </Link>
-        <Link to="/reports" className="block mt-3 text-center text-xs text-primary">← Back to Reports</Link>
+        <Link to="/dashboard" className="block mt-3 text-center text-xs text-primary">← Back</Link>
       </div>
     </AppShell>
   );

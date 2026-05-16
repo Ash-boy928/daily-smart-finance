@@ -25,6 +25,8 @@ import { Route as CustomersNewRouteImport } from './routes/customers.new'
 import { Route as CustomersIdRouteImport } from './routes/customers.$id'
 import { Route as CollectorsUsernameRouteImport } from './routes/collectors.$username'
 import { Route as ReceiptSavingSavingIdRouteImport } from './routes/receipt.saving.$savingId'
+import { Route as ReceiptCustomerLoanIdRouteImport } from './routes/receipt.customer.$loanId'
+import { Route as ReceiptSavingCustomerSavingIdRouteImport } from './routes/receipt.saving.customer.$savingId'
 
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
@@ -106,6 +108,17 @@ const ReceiptSavingSavingIdRoute = ReceiptSavingSavingIdRouteImport.update({
   path: '/receipt/saving/$savingId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ReceiptCustomerLoanIdRoute = ReceiptCustomerLoanIdRouteImport.update({
+  id: '/receipt/customer/$loanId',
+  path: '/receipt/customer/$loanId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReceiptSavingCustomerSavingIdRoute =
+  ReceiptSavingCustomerSavingIdRouteImport.update({
+    id: '/receipt/saving/customer/$savingId',
+    path: '/receipt/saving/customer/$savingId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -123,7 +136,9 @@ export interface FileRoutesByFullPath {
   '/customers/$id': typeof CustomersIdRoute
   '/customers/new': typeof CustomersNewRoute
   '/receipt/$loanId': typeof ReceiptLoanIdRoute
+  '/receipt/customer/$loanId': typeof ReceiptCustomerLoanIdRoute
   '/receipt/saving/$savingId': typeof ReceiptSavingSavingIdRoute
+  '/receipt/saving/customer/$savingId': typeof ReceiptSavingCustomerSavingIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -141,7 +156,9 @@ export interface FileRoutesByTo {
   '/customers/$id': typeof CustomersIdRoute
   '/customers/new': typeof CustomersNewRoute
   '/receipt/$loanId': typeof ReceiptLoanIdRoute
+  '/receipt/customer/$loanId': typeof ReceiptCustomerLoanIdRoute
   '/receipt/saving/$savingId': typeof ReceiptSavingSavingIdRoute
+  '/receipt/saving/customer/$savingId': typeof ReceiptSavingCustomerSavingIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -160,7 +177,9 @@ export interface FileRoutesById {
   '/customers/$id': typeof CustomersIdRoute
   '/customers/new': typeof CustomersNewRoute
   '/receipt/$loanId': typeof ReceiptLoanIdRoute
+  '/receipt/customer/$loanId': typeof ReceiptCustomerLoanIdRoute
   '/receipt/saving/$savingId': typeof ReceiptSavingSavingIdRoute
+  '/receipt/saving/customer/$savingId': typeof ReceiptSavingCustomerSavingIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -180,7 +199,9 @@ export interface FileRouteTypes {
     | '/customers/$id'
     | '/customers/new'
     | '/receipt/$loanId'
+    | '/receipt/customer/$loanId'
     | '/receipt/saving/$savingId'
+    | '/receipt/saving/customer/$savingId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -198,7 +219,9 @@ export interface FileRouteTypes {
     | '/customers/$id'
     | '/customers/new'
     | '/receipt/$loanId'
+    | '/receipt/customer/$loanId'
     | '/receipt/saving/$savingId'
+    | '/receipt/saving/customer/$savingId'
   id:
     | '__root__'
     | '/'
@@ -216,7 +239,9 @@ export interface FileRouteTypes {
     | '/customers/$id'
     | '/customers/new'
     | '/receipt/$loanId'
+    | '/receipt/customer/$loanId'
     | '/receipt/saving/$savingId'
+    | '/receipt/saving/customer/$savingId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -233,7 +258,9 @@ export interface RootRouteChildren {
   SettingsRoute: typeof SettingsRoute
   CollectorsUsernameRoute: typeof CollectorsUsernameRoute
   ReceiptLoanIdRoute: typeof ReceiptLoanIdRoute
+  ReceiptCustomerLoanIdRoute: typeof ReceiptCustomerLoanIdRoute
   ReceiptSavingSavingIdRoute: typeof ReceiptSavingSavingIdRoute
+  ReceiptSavingCustomerSavingIdRoute: typeof ReceiptSavingCustomerSavingIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -350,6 +377,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReceiptSavingSavingIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/receipt/customer/$loanId': {
+      id: '/receipt/customer/$loanId'
+      path: '/receipt/customer/$loanId'
+      fullPath: '/receipt/customer/$loanId'
+      preLoaderRoute: typeof ReceiptCustomerLoanIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/receipt/saving/customer/$savingId': {
+      id: '/receipt/saving/customer/$savingId'
+      path: '/receipt/saving/customer/$savingId'
+      fullPath: '/receipt/saving/customer/$savingId'
+      preLoaderRoute: typeof ReceiptSavingCustomerSavingIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -381,7 +422,9 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsRoute: SettingsRoute,
   CollectorsUsernameRoute: CollectorsUsernameRoute,
   ReceiptLoanIdRoute: ReceiptLoanIdRoute,
+  ReceiptCustomerLoanIdRoute: ReceiptCustomerLoanIdRoute,
   ReceiptSavingSavingIdRoute: ReceiptSavingSavingIdRoute,
+  ReceiptSavingCustomerSavingIdRoute: ReceiptSavingCustomerSavingIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -62,7 +62,11 @@ function Collect() {
     setToast(`✓ ${inr(final)} collected from ${name}`);
     setTimeout(() => setToast(null), 2500);
     if (completed) {
-      setTimeout(() => navigate({ to: "/receipt/$loanId", params: { loanId } }), 600);
+      const isCollector = session?.role === "collector";
+      setTimeout(() => {
+        if (isCollector) navigate({ to: "/receipt/customer/$loanId", params: { loanId } });
+        else navigate({ to: "/receipt/$loanId", params: { loanId } });
+      }, 600);
     }
   };
 
